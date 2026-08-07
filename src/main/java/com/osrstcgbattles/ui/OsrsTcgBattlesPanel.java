@@ -16,6 +16,7 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.util.List;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
@@ -52,8 +53,14 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		this.controller = java.util.Objects.requireNonNull(controller, "controller");
 		setLayout(new BorderLayout(0, 8));
 		setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-		JPanel play = new JPanel(new BorderLayout(0, 8));
+		JPanel play = new JPanel(new GridBagLayout());
 		play.setOpaque(false);
+		GridBagConstraints playLayout = new GridBagConstraints();
+		playLayout.gridx = 0;
+		playLayout.weightx = 1.0;
+		playLayout.weighty = 0.0;
+		playLayout.fill = GridBagConstraints.HORIZONTAL;
+		playLayout.insets = new Insets(0, 0, 8, 0);
 
 		JPanel status = new JPanel(new GridLayout(0, 1, 0, 5));
 		status.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -121,7 +128,8 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		topLayout.gridy = 1;
 		topLayout.insets = new Insets(0, 0, 0, 0);
 		top.add(friendDuel, topLayout);
-		play.add(top, BorderLayout.NORTH);
+		playLayout.gridy = 0;
+		play.add(top, playLayout);
 
 		JPanel buttons = new JPanel(new GridLayout(0, 1, 0, 4));
 		refreshButton.addActionListener(event -> {
@@ -148,7 +156,16 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		buttons.add(builderButton);
 		buttons.add(demoButton);
 		buttons.setPreferredSize(new Dimension(0, 76));
-		play.add(buttons, BorderLayout.SOUTH);
+		playLayout.gridy = 1;
+		playLayout.insets = new Insets(0, 0, 0, 0);
+		play.add(buttons, playLayout);
+
+		// With every row at weighty 0 GridBagLayout centers the whole grid vertically, which
+		// pushed the content into the middle and left dead space above and below. A filler row
+		// with weighty 1.0 absorbs the leftover space so everything sits at the top.
+		playLayout.gridy = 2;
+		playLayout.weighty = 1.0;
+		play.add(Box.createVerticalGlue(), playLayout);
 
 		JTabbedPane tabs = new JTabbedPane();
 		tabs.addTab("Play", play);

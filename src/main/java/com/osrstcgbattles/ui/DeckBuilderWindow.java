@@ -101,7 +101,8 @@ public final class DeckBuilderWindow
 			SwingUtilities.invokeLater(this::refresh);
 			return;
 		}
-		reloadProfile(editingId);
+		updateOwnershipBanner();
+		rebuildCatalog();
 	}
 
 	private void initialize()
@@ -281,15 +282,7 @@ public final class DeckBuilderWindow
 
 	private void reloadProfile(String preferredId)
 	{
-		OwnedCardCollectionSnapshot collection = controller.getCollection();
-		ownershipFilter.setEnabled(collection.isKnown());
-		if (!collection.isKnown())
-		{
-			ownershipFilter.setSelectedIndex(0);
-		}
-		ownershipBanner.setText(BattleUiFormatters.collection(collection)
-			+ (collection.isKnown() ? " - unowned cards are marked" : " - refresh the collection before checking ownership"));
-		ownershipBanner.setBackground(collection.isKnown() ? new Color(48, 82, 58) : new Color(105, 78, 35));
+		updateOwnershipBanner();
 
 		DeckProfile profile = controller.getDeckProfile();
 		String selectedId = profile.getSelectedDeckId().orElse(null);
@@ -320,6 +313,19 @@ public final class DeckBuilderWindow
 			newDeck();
 		}
 		rebuildCatalog();
+	}
+
+	private void updateOwnershipBanner()
+	{
+		OwnedCardCollectionSnapshot collection = controller.getCollection();
+		ownershipFilter.setEnabled(collection.isKnown());
+		if (!collection.isKnown())
+		{
+			ownershipFilter.setSelectedIndex(0);
+		}
+		ownershipBanner.setText(BattleUiFormatters.collection(collection)
+			+ (collection.isKnown() ? " - unowned cards are marked" : " - refresh the collection before checking ownership"));
+		ownershipBanner.setBackground(collection.isKnown() ? new Color(48, 82, 58) : new Color(105, 78, 35));
 	}
 
 	private void loadDeck(Deck deck)
