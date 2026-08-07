@@ -1,0 +1,44 @@
+# Card art sources for OSRS TCG Battles.
+# Derived from OSRS TCG's Card.json (BSD 2-Clause, Azderi) via the TCG Locked catalogs.
+# Format: azCardName <TAB> ITEM|NPC <TAB> wikiUrlOrEmpty
+# Not part of the hashed battle catalog: art is cosmetic and must not affect duel compatibility.
+Chicken	NPC	https://oldschool.runescape.wiki/images/thumb/Chicken_%281%29.png/130px-Chicken_%281%29.png
+Cow	NPC	https://oldschool.runescape.wiki/images/thumb/Cow_%281%29.png/130px-Cow_%281%29.png
+Goblin	NPC	https://oldschool.runescape.wiki/images/thumb/Goblin.png/130px-Goblin.png
+Dark wizard	NPC	https://oldschool.runescape.wiki/images/thumb/Dark_wizard.png/130px-Dark_wizard.png
+Wizard	NPC	https://oldschool.runescape.wiki/images/thumb/Wizard.png/130px-Wizard.png
+Wise Old Man	NPC	https://oldschool.runescape.wiki/images/thumb/Wise_Old_Man.png/130px-Wise_Old_Man.png
+Commander Zilyana	NPC	https://oldschool.runescape.wiki/images/thumb/Commander_Zilyana.png/130px-Commander_Zilyana.png
+General Graardor	NPC	https://oldschool.runescape.wiki/images/thumb/General_Graardor.png/130px-General_Graardor.png
+Kree'arra	NPC	https://oldschool.runescape.wiki/images/thumb/Kree%27arra.png/130px-Kree%27arra.png
+K'ril Tsutsaroth	NPC	https://oldschool.runescape.wiki/images/thumb/K%27ril_Tsutsaroth.png/130px-K%27ril_Tsutsaroth.png
+Dharok the Wretched	NPC	https://oldschool.runescape.wiki/images/thumb/Dharok_the_Wretched.png/130px-Dharok_the_Wretched.png
+Karil the Tainted	NPC	https://oldschool.runescape.wiki/images/thumb/Karil_the_Tainted.png/130px-Karil_the_Tainted.png
+King Black Dragon	NPC	https://oldschool.runescape.wiki/images/thumb/King_Black_Dragon.png/130px-King_Black_Dragon.png
+TzTok-Jad	NPC	https://oldschool.runescape.wiki/images/thumb/TzTok-Jad.png/130px-TzTok-Jad.png
+Vorkath	NPC	https://oldschool.runescape.wiki/images/thumb/Vorkath.png/130px-Vorkath.png
+Zulrah	NPC	https://oldschool.runescape.wiki/images/thumb/Zulrah_%28serpentine%29.png/130px-Zulrah_%28serpentine%29.png
+Abyssal whip	ITEM	
+Dragon scimitar	ITEM	
+Shark	ITEM	
+Saradomin brew	ITEM	
+Guard	NPC	https://oldschool.runescape.wiki/images/thumb/Guard_%28Edgeville%2C_1%29.png/130px-Guard_%28Edgeville%2C_1%29.png
+Man	NPC	https://oldschool.runescape.wiki/images/thumb/Man_%28blue%29.png/130px-Man_%28blue%29.png
+Woman	NPC	https://oldschool.runescape.wiki/images/thumb/Woman.png/130px-Woman.png
+Farmer	NPC	https://oldschool.runescape.wiki/images/thumb/Farmer_%28straw_hat%2C_brown_hair%29.png/130px-Farmer_%28straw_hat%2C_brown_hair%29.png
+Monk	NPC	https://oldschool.runescape.wiki/images/thumb/Monk_%28Ardougne%29.png/130px-Monk_%28Ardougne%29.png
+Highwayman	NPC	https://oldschool.runescape.wiki/images/thumb/Highwayman.png/130px-Highwayman.png
+Mugger	NPC	https://oldschool.runescape.wiki/images/thumb/Mugger.png/130px-Mugger.png
+Thief	NPC	https://oldschool.runescape.wiki/images/thumb/Thief_%28Standard%2C_2%29.png/130px-Thief_%28Standard%2C_2%29.png
+Giant rat	NPC	https://oldschool.runescape.wiki/images/thumb/Giant_rat.png/130px-Giant_rat.png
+Giant spider	NPC	https://oldschool.runescape.wiki/images/thumb/Giant_spider_%28Level_2%29.png/130px-Giant_spider_%28Level_2%29.png
+Imp	NPC	https://oldschool.runescape.wiki/images/thumb/Imp.png/130px-Imp.png
+Rat	NPC	https://oldschool.runescape.wiki/images/thumb/Rat.png/130px-Rat.png
+Black bear	NPC	https://oldschool.runescape.wiki/images/thumb/Black_bear.png/130px-Black_bear.png
+Scorpion	NPC	https://oldschool.runescape.wiki/images/thumb/Scorpion_%28Sailing%29.png/130px-Scorpion_%28Sailing%29.png
+Skeleton	NPC	https://oldschool.runescape.wiki/images/thumb/Skeleton_%28level_21%2C_1%29.png/130px-Skeleton_%28level_21%2C_1%29.png
+Zombie	NPC	https://oldschool.runescape.wiki/images/thumb/Zombie_%28Level_13%29.png/130px-Zombie_%28Level_13%29.png
+Lobster	ITEM	
+Swordfish	ITEM	
+Strength potion	ITEM	
+Bronze sword	ITEM	
