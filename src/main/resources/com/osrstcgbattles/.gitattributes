@@ -1,0 +1,3 @@
+# The catalog hash is SHA-256 over the exact resource bytes, so battle-cards.json
+# must be byte-identical on every checkout. Force LF everywhere.
+battle-cards.json text eol=lf
