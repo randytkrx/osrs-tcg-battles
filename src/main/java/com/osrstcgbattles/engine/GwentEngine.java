@@ -11,7 +11,7 @@ import java.util.Random;
 /** Deterministic, immutable Hearthstone-lite rules engine. */
 public final class GwentEngine
 {
-	public static final int RULESET_VERSION = 2;
+	public static final int RULESET_VERSION = 3;
 	public static final int HERO_HEALTH = 20;
 	public static final int DECK_SIZE = 30;
 	public static final int OPENING_HAND_SIZE = 3;
@@ -160,6 +160,10 @@ public final class GwentEngine
 		if (!command.getTargetInstanceId().isPresent())
 		{
 			PlayerId opponent = command.getPlayer().opponent();
+			if (!state.getBoard().getUnits(opponent).isEmpty())
+			{
+				return reject(state, RejectionReason.HERO_PROTECTED);
+			}
 			players.put(opponent, players.get(opponent).damageHero(attacker.getCurrentAttack()));
 			return accept(completeIfDead(state, players, board, state.getNextUnitInstanceId()));
 		}

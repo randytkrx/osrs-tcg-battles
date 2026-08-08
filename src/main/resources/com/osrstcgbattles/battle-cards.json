@@ -1,6 +1,6 @@
 {
   "catalogVersion": 2,
-  "rulesetVersion": 2,
+  "rulesetVersion": 3,
   "cards": [
     {"id":"neutral-chicken","azCardName":"Chicken","displayName":"Chicken","category":"UNIT","faction":"NEUTRAL","rarity":"COMMON","manaCost":0,"attack":1,"health":1,"tags":["BEAST","BIRD"],"rulesText":"No ability.","abilities":[{"type":"VANILLA"}]},
     {"id":"neutral-cow","azCardName":"Cow","displayName":"Cow","category":"UNIT","faction":"NEUTRAL","rarity":"COMMON","manaCost":1,"attack":1,"health":2,"tags":["BEAST"],"rulesText":"No ability.","abilities":[{"type":"VANILLA"}]},

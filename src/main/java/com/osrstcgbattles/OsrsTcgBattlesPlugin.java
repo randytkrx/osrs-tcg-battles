@@ -782,35 +782,56 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				.filter(deck -> deck.getId().equals(id)).findFirst()).orElse(null);
 			currentCatalog = catalog;
 		}
-		if (selected == null)
+		if (currentCatalog == null)
 		{
-			showPartyMessage(generation, "Select a deck before starting a friend duel");
+			showPartyMessage(generation, "The card catalog is not loaded");
 			return null;
 		}
-		if (!collection.isKnown())
+		boolean randomFallback = false;
+		Deck duelDeck = selected;
+		if (selected == null)
+		{
+			randomFallback = true;
+		}
+		else if (!collection.isKnown())
 		{
 			showPartyMessage(generation, "Load your card collection before starting a friend duel");
 			return null;
 		}
-		if (!validate(selected).isValid())
+		else if (!validate(selected).isValid())
 		{
-			showPartyMessage(generation, "The selected deck must be valid before starting a friend duel");
-			return null;
+			randomFallback = true;
+		}
+		if (randomFallback)
+		{
+			try
+			{
+				duelDeck = new CatalogDeckFactory(currentCatalog).randomDeck();
+			}
+			catch (RuntimeException exception)
+			{
+				showPartyMessage(generation, "Unable to build a random deck for the friend duel");
+				return null;
+			}
 		}
 		try
 		{
 			String commitment = DeckCommitment.compute(currentCatalog.getSha256(),
-				currentCatalog.getRulesetVersion(), selected);
+				currentCatalog.getRulesetVersion(), duelDeck);
 			runOnEdtAndWait(() -> clearStalePartyMatchOnEdt(generation));
 			long sessionGeneration;
 			synchronized (stateLock)
 			{
 				if (!isCurrent(generation)) return null;
-				pendingPartyDeck = selected;
+				pendingPartyDeck = duelDeck;
 				sessionGeneration = ++partySessionGeneration;
 			}
+			if (randomFallback)
+			{
+				showPartyMessage(generation, "No valid deck selected - using a random 30-card deck");
+			}
 			return new PartyDeckMetadata(currentCatalog.getSha256(), currentCatalog.getRulesetVersion(),
-				selected.getId(), commitment, sessionGeneration);
+				duelDeck.getId(), commitment, sessionGeneration);
 		}
 		catch (RuntimeException exception)
 		{

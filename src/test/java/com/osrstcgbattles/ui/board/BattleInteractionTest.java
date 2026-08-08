@@ -71,6 +71,23 @@ public class BattleInteractionTest
 	}
 
 	@Test
+	public void enemyHeroIsGuardedWhileEnemyHasUnits()
+	{
+		MatchState state = accepted(newMatch(), new PlayCardCommand(PlayerId.PLAYER_ONE, "p1"));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
+		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_TWO, "p2"));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
+		String attackerId = state.getBoard().getUnits(PlayerId.PLAYER_ONE).get(0).getInstanceId();
+		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
+		interaction.update(state);
+
+		assertFalse(interaction.clickUnit(attackerId).isPresent());
+		assertTrue(interaction.getSelectedAttackerId().isPresent());
+		assertFalse(interaction.isEnemyHeroTargetable());
+		assertFalse(interaction.clickEnemyHero().isPresent());
+	}
+
+	@Test
 	public void unaffordableCardCannotStartAPlay()
 	{
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);

@@ -206,7 +206,8 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 			+ section("4. Deploy Effects", "Some cards damage an enemy or strengthen an ally when played. After selecting "
 				+ "the card, click a glowing target. <b>Hover any card to read its full effect.</b>")
 			+ section("5. Combat", "New units have summoning sickness and cannot attack until your next turn. Select a ready "
-				+ "unit, then attack an enemy unit or the enemy hero. Units deal damage to each other simultaneously.")
+				+ "unit, then attack an enemy unit or, if the enemy board is empty, the enemy hero. Units deal damage to "
+				+ "each other simultaneously.")
 			+ section("6. Hand and Fatigue", "Your hand holds at most " + GwentEngine.HAND_LIMIT
 				+ " cards. When your deck is empty, failed draws deal increasing fatigue damage.")
 			+ section("7. Controls", "<b>Right-click</b> or press <b>Esc</b> to cancel a selection. Press <b>End Turn</b> when "
@@ -264,12 +265,13 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		String message = controller.getPartyDuelMessage();
 		partyStatusLabel.setText("<html>" + (message == null
 			? BattleUiFormatters.partyDuelStatus(duel) : message) + "</html>");
-		boolean deckAvailable = selected != null && collection.isKnown() && controller.validate(selected).isValid();
 		boolean hasOpponent = opponentCombo.getSelectedItem() != null;
 		opponentCombo.setEnabled(duel.getStatus() == PartyDuelSnapshot.Status.IDLE
 			|| duel.getStatus() == PartyDuelSnapshot.Status.TERMINAL);
-		inviteButton.setEnabled(BattleUiFormatters.canInvitePartyDuel(duel, hasOpponent, deckAvailable));
-		acceptButton.setEnabled(BattleUiFormatters.canAcceptPartyDuel(duel, deckAvailable));
+		// A missing or invalid deck now falls back to a random 30-card deck, so the duel is
+		// always startable; deck validation is still shown above for the player's information.
+		inviteButton.setEnabled(BattleUiFormatters.canInvitePartyDuel(duel, hasOpponent, true));
+		acceptButton.setEnabled(BattleUiFormatters.canAcceptPartyDuel(duel, true));
 		declineButton.setEnabled(duel.canDecline());
 		abortButton.setEnabled(duel.canAbort());
 	}

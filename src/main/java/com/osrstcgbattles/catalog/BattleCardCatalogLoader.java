@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public final class BattleCardCatalogLoader
 {
 	public static final int SUPPORTED_CATALOG_VERSION = 2;
-	public static final int SUPPORTED_RULESET_VERSION = 2;
+	public static final int SUPPORTED_RULESET_VERSION = 3;
 	public static final String DEFAULT_RESOURCE = "/com/osrstcgbattles/battle-cards.json";
 
 	private static final Pattern ID_PATTERN = Pattern.compile("[a-z0-9]+(?:-[a-z0-9]+)*");

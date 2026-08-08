@@ -66,6 +66,44 @@ public class GwentEngineTest
 	}
 
 	@Test
+	public void heroCannotBeAttackedWhileEnemyHasUnits()
+	{
+		MatchState state = accepted(newMatch(), new PlayCardCommand(PlayerId.PLAYER_ONE, "p1"));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
+		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_TWO, "p2"));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
+		String attacker = state.getBoard().getUnits(PlayerId.PLAYER_ONE).get(0).getInstanceId();
+
+		CommandResult blocked = engine.execute(state, new AttackCommand(PlayerId.PLAYER_ONE, attacker));
+		assertFalse(blocked.isAccepted());
+		assertEquals(RejectionReason.HERO_PROTECTED, blocked.getRejectionReason().get());
+		assertEquals(20, state.getPlayer(PlayerId.PLAYER_TWO).getHeroHealth());
+	}
+
+	@Test
+	public void heroAttackIsAllowedOnceEnemyBoardIsCleared()
+	{
+		MatchState state = engine.newMatch(deck("p1", 5, 5), deck("p2", 1, 1), 43L);
+		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_ONE, "p1"));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
+		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_TWO, "p2"));
+		String enemy = state.getBoard().getUnits(PlayerId.PLAYER_TWO).get(0).getInstanceId();
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
+		String attacker = state.getBoard().getUnits(PlayerId.PLAYER_ONE).get(0).getInstanceId();
+
+		state = accepted(state, new AttackCommand(PlayerId.PLAYER_ONE, attacker, enemy));
+		assertTrue(state.getBoard().getUnits(PlayerId.PLAYER_TWO).isEmpty());
+		assertFalse(state.getBoard().getUnits(PlayerId.PLAYER_ONE).isEmpty());
+
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
+		attacker = state.getBoard().getUnits(PlayerId.PLAYER_ONE).get(0).getInstanceId();
+
+		state = accepted(state, new AttackCommand(PlayerId.PLAYER_ONE, attacker));
+		assertEquals(15, state.getPlayer(PlayerId.PLAYER_TWO).getHeroHealth());
+	}
+
+	@Test
 	public void fatigueDamageIncreasesOnEachEmptyDraw()
 	{
 		PlayerState player = new PlayerState(20, 0, 1, 0, 0, Collections.emptyList(),

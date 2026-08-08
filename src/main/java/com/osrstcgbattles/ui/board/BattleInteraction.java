@@ -177,6 +177,10 @@ public final class BattleInteraction
 		{
 			return false;
 		}
+		if (!state.getBoard().getUnits(localSeat.opponent()).isEmpty())
+		{
+			return false;
+		}
 		BoardUnit attacker = findOnBoard(selectedAttackerId);
 		return attacker != null && attacker.isReady() && isOwnedBy(attacker, localSeat);
 	}
