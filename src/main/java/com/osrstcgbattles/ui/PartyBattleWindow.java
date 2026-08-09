@@ -2,7 +2,6 @@ package com.osrstcgbattles.ui;
 
 import com.osrstcgbattles.art.CardArtProvider;
 import com.osrstcgbattles.catalog.BattleCardCatalog;
-import com.osrstcgbattles.catalog.BattleCardCatalogLoader;
 import com.osrstcgbattles.engine.Card;
 import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.CommandResult;
@@ -58,10 +57,12 @@ public final class PartyBattleWindow
 	private BattlePlayerIdentity opponentIdentity;
 	private boolean concedeConfirmationOpen;
 
-	public PartyBattleWindow(PartyMatchCoordinator coordinator, Runnable ownerCloseAction, CardArtProvider art,
+	public PartyBattleWindow(PartyMatchCoordinator coordinator, BattleCardCatalog catalog, Runnable ownerCloseAction,
+		CardArtProvider art,
 		PartyBattleParticipant localParticipant, PartyBattleParticipant opponentParticipant)
 	{
 		this.coordinator = Objects.requireNonNull(coordinator, "coordinator");
+		Objects.requireNonNull(catalog, "catalog");
 		this.ownerCloseAction = Objects.requireNonNull(ownerCloseAction, "ownerCloseAction");
 		Objects.requireNonNull(art, "art");
 		this.snapshot = coordinator.snapshot();
@@ -75,12 +76,6 @@ public final class PartyBattleWindow
 		this.opponentIdentity = new BattlePlayerIdentity(opponentParticipant.getDisplayName(),
 			opponentParticipant.getAvatar(), playerLabel(localSeat.opponent()));
 		this.listener = updated -> SwingUtilities.invokeLater(() -> acceptSnapshot(updated));
-		// Load the catalog before registering the listener: loadDefault() can throw (missing
-		// resource, malformed JSON), and if that happened after addListener() the listener would
-		// stay registered on a construction the caller believes already failed cleanly -- captured
-		// in the coordinator, ready to call render() on the next snapshot against a frame/view that
-		// were never built.
-		BattleCardCatalog catalog = new BattleCardCatalogLoader().loadDefault();
 		coordinator.addListener(listener);
 		try
 		{

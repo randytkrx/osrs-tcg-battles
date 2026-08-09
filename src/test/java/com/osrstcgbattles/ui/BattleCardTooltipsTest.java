@@ -1,5 +1,6 @@
 package com.osrstcgbattles.ui;
 
+import com.google.gson.Gson;
 import com.osrstcgbattles.catalog.BattleCard;
 import com.osrstcgbattles.catalog.BattleCardCatalog;
 import com.osrstcgbattles.catalog.BattleCardCatalogLoader;
@@ -10,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 
 public class BattleCardTooltipsTest
 {
-	private final BattleCardCatalog catalog = new BattleCardCatalogLoader().loadDefault();
+	private final BattleCardCatalog catalog = new BattleCardCatalogLoader(new Gson()).loadDefault();
 
 	@Test
 	public void tooltipIncludesCardIdentityStatsAndRules()

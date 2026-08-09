@@ -3,6 +3,8 @@ package com.osrstcgbattles.ui.board;
 import com.osrstcgbattles.art.CardArtProvider;
 import com.osrstcgbattles.art.EmblemCardArt;
 import com.osrstcgbattles.catalog.BattleCard;
+import com.osrstcgbattles.catalog.AbilityType;
+import com.osrstcgbattles.catalog.CardAbility;
 import com.osrstcgbattles.ui.BattleCardTooltips;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
@@ -49,12 +51,16 @@ public class CardTile extends JComponent
 	private boolean exhausted;
 	private int currentAttack;
 	private int currentHealth;
+	private boolean shielded;
+	private boolean stealthed;
 
 	public CardTile(BattleCard card, CardArtProvider art)
 	{
 		this.card = Objects.requireNonNull(card, "card");
 		this.currentAttack = card.getAttack();
 		this.currentHealth = card.getHealth();
+		this.shielded = hasAbility(AbilityType.SHIELD);
+		this.stealthed = hasAbility(AbilityType.STEALTH);
 		setOpaque(false);
 		setPreferredSize(new Dimension(BoardTheme.CARD_WIDTH, BoardTheme.CARD_HEIGHT));
 		BattleCardTooltips.install(this, card);
@@ -85,6 +91,9 @@ public class CardTile extends JComponent
 		this.exhausted = exhausted;
 		repaint();
 	}
+
+	public void setShielded(boolean shielded) { this.shielded = shielded; repaint(); }
+	public void setStealthed(boolean stealthed) { this.stealthed = stealthed; repaint(); }
 
 	public void setFaceDown(boolean faceDown)
 	{
@@ -174,7 +183,47 @@ public class CardTile extends JComponent
 		paintManaPip(graphics, width, height);
 		paintRarityGem(graphics, width, height);
 		paintStatsBadge(graphics, width, height);
+		paintKeywordBadges(graphics, width);
 		paintStateBorder(graphics, width, height, faction);
+	}
+
+	private void paintKeywordBadges(Graphics2D graphics, int width)
+	{
+		java.util.List<String> labels = new java.util.ArrayList<>();
+		if (shielded) labels.add("S");
+		if (hasAbility(AbilityType.LIFESTEAL)) labels.add("L");
+		if (hasAbility(AbilityType.POISONOUS)) labels.add("P");
+		if (hasAbility(AbilityType.RUSH)) labels.add("R");
+		if (hasAbility(AbilityType.TAUNT)) labels.add("T");
+		if (stealthed) labels.add("ST");
+		if (hasAbility(AbilityType.NEX_ASCENSION)) labels.add("N");
+		if (hasDeathrattle()) labels.add("D");
+		int x = width - 15;
+		graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 8f));
+		for (String label : labels)
+		{
+			int badgeWidth = "ST".equals(label) ? 18 : 13;
+			x -= badgeWidth;
+			graphics.setColor(new Color(24, 19, 14, 225));
+			graphics.fillRoundRect(x, 4, badgeWidth, 13, 6, 6);
+			graphics.setColor(BoardTheme.GOLD);
+			graphics.drawRoundRect(x, 4, badgeWidth, 13, 6, 6);
+			graphics.drawString(label, x + (badgeWidth - graphics.getFontMetrics().stringWidth(label)) / 2, 14);
+			x -= 2;
+		}
+	}
+
+	private boolean hasAbility(AbilityType type)
+	{
+		for (CardAbility ability : card.getAbilities()) if (ability.getType() == type) return true;
+		return false;
+	}
+
+	private boolean hasDeathrattle()
+	{
+		for (CardAbility ability : card.getAbilities())
+			if (ability.getType().name().startsWith("DEATHRATTLE_")) return true;
+		return false;
 	}
 
 	private void paintFrame(Graphics2D graphics, int width, int height, Color faction)

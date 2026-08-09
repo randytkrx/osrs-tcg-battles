@@ -1,6 +1,6 @@
 package com.osrstcgbattles.engine;
 
-/** A card definition. Future card types can implement this interface. */
+/** A card definition. The current engine supports {@link UnitCard} and {@link SpecialCard}. */
 public interface Card
 {
 	String getId();

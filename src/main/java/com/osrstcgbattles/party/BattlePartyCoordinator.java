@@ -27,11 +27,13 @@ public final class BattlePartyCoordinator
 
 	public static final long DELIVERY_ACK_TIMEOUT_NANOS = 10_000_000_000L;
 	public static final long SESSION_TIMEOUT_NANOS = 60_000_000_000L;
+	private static final long RETRY_INTERVAL_NANOS = 2_000_000_000L;
+	private static final int HANDSHAKE_RETRY_LIMIT = 10;
 	private static final int REPLAY_CAPACITY = 64;
 	private static final SecureRandom RANDOM = new SecureRandom();
 
 	private final long localMemberId;
-	private final CanonicalPartyJsonCodec codec = new CanonicalPartyJsonCodec(new Gson());
+	private final CanonicalPartyJsonCodec codec;
 	private final List<BattlePartyEnvelope> outbound = new ArrayList<>();
 	private final List<PartyApplicationMessage> inboundApplication = new ArrayList<>();
 	private final Map<String, List<BattlePartyEnvelope>> cachedResponses = new LinkedHashMap<String, List<BattlePartyEnvelope>>()
@@ -44,13 +46,14 @@ public final class BattlePartyCoordinator
 	};
 	private Session session;
 
-	public BattlePartyCoordinator(long localMemberId)
+	public BattlePartyCoordinator(long localMemberId, Gson gson)
 	{
 		if (localMemberId <= 0)
 		{
 			throw new IllegalArgumentException("localMemberId must be positive");
 		}
 		this.localMemberId = localMemberId;
+		this.codec = new CanonicalPartyJsonCodec(Objects.requireNonNull(gson, "gson"));
 	}
 
 	long getLocalMemberId() { return localMemberId; }
@@ -177,6 +180,9 @@ public final class BattlePartyCoordinator
 			return ReceiveResult.REJECTED;
 		}
 
+		session.lastProgressNanos = nowNanos;
+		session.lastHandshakeOutbound = null;
+		session.handshakeRetries = 0;
 		int responseStart = outbound.size();
 		try
 		{
@@ -199,12 +205,24 @@ public final class BattlePartyCoordinator
 	{
 		if (session == null || session.machine.isTerminal()) return;
 		if (session.machine.getState() == PartySessionStateMachine.State.READY) return;
+		if (session.lastHandshakeOutbound != null
+			&& elapsed(nowNanos, session.lastHandshakeSendNanos) >= RETRY_INTERVAL_NANOS)
+		{
+			if (session.handshakeRetries >= HANDSHAKE_RETRY_LIMIT)
+			{
+				abort("Invitation or handshake timed out");
+				return;
+			}
+			outbound.add(session.lastHandshakeOutbound);
+			session.lastHandshakeSendNanos = nowNanos;
+			session.handshakeRetries++;
+		}
 		if (session.outboundInvite && !session.inviteAcknowledged
 			&& elapsed(nowNanos, session.startedNanos) >= DELIVERY_ACK_TIMEOUT_NANOS)
 		{
 			abort("Invitation delivery timed out");
 		}
-		else if (elapsed(nowNanos, session.startedNanos) >= SESSION_TIMEOUT_NANOS)
+		else if (elapsed(nowNanos, session.lastProgressNanos) >= SESSION_TIMEOUT_NANOS)
 		{
 			abort("Invitation or handshake timed out");
 		}
@@ -351,7 +369,7 @@ public final class BattlePartyCoordinator
 			case RESUME:
 			case CONCEDE:
 				inboundApplication.add(new PartyApplicationMessage(message.getMessageType(), session.matchId,
-					session.peerMemberId, message.getSequence(), applicationPayload));
+					session.peerMemberId, message.getSequence(), applicationPayload, codec));
 				if (message.getMessageType() == BattlePartyMessageType.CONCEDE)
 					finishTerminal("Opponent conceded the duel");
 				break;
@@ -369,6 +387,8 @@ public final class BattlePartyCoordinator
 			session.peerSalt, session.peerMemberId);
 		session.sessionKey = BattlePartyCrypto.deriveSessionKey(session.keyPair.getPrivate(), peerKey, combinedSalt,
 			session.matchId, localMemberId, session.peerMemberId);
+		session.authenticationCode = BattlePartyCrypto.authenticationCode(session.sessionKey, session.matchId,
+			localMemberId, session.peerMemberId);
 		Arrays.fill(combinedSalt, (byte) 0);
 		emitReady();
 	}
@@ -428,6 +448,7 @@ public final class BattlePartyCoordinator
 		if (result != PartySessionStateMachine.Result.ACCEPTED) throw new IllegalStateException("invalid READY state");
 		encrypt(message, codec.encodeMap(payload));
 		outbound.add(message);
+		rememberHandshakeMessage(message);
 	}
 
 	private void emitAbort(String reason)
@@ -461,6 +482,19 @@ public final class BattlePartyCoordinator
 			throw new IllegalStateException("invalid local protocol transition");
 		}
 		outbound.add(message);
+		if (!PartyApplicationMessage.isAllowedType(message.getMessageType())
+			&& message.getMessageType() != BattlePartyMessageType.ABORT
+			&& message.getMessageType() != BattlePartyMessageType.DECLINE)
+		{
+			rememberHandshakeMessage(message);
+		}
+	}
+
+	private void rememberHandshakeMessage(BattlePartyEnvelope message)
+	{
+		session.lastHandshakeOutbound = message;
+		session.lastHandshakeSendNanos = session.lastProgressNanos;
+		session.handshakeRetries = 0;
 	}
 
 	private BattlePartyEnvelope newEnvelope(BattlePartyMessageType type)
@@ -582,7 +616,8 @@ public final class BattlePartyCoordinator
 			return session.inviteAcknowledged ? "Invitation delivered; waiting for response" : "Sending invitation";
 		if (status == PartyDuelSnapshot.Status.INBOUND_INVITE) return "Party duel invitation received";
 		if (status == PartyDuelSnapshot.Status.HANDSHAKE) return "Establishing secure party duel";
-		if (status == PartyDuelSnapshot.Status.READY) return "Secure party duel transport ready";
+		if (status == PartyDuelSnapshot.Status.READY)
+			return "Verify security code with opponent: " + session.authenticationCode;
 		return "No party duel in progress";
 	}
 
@@ -603,6 +638,7 @@ public final class BattlePartyCoordinator
 		private final String peerDisplayName;
 		private final boolean outboundInvite;
 		private final long startedNanos;
+		private long lastProgressNanos;
 		private final PartySessionStateMachine machine;
 		private PartyDuelMetadata localMetadata;
 		private PartyDuelMetadata peerMetadata;
@@ -613,6 +649,10 @@ public final class BattlePartyCoordinator
 		private byte[] peerSalt;
 		private byte[] sessionKey;
 		private String terminalReason = "Party duel ended";
+		private String authenticationCode = "unavailable";
+		private BattlePartyEnvelope lastHandshakeOutbound;
+		private long lastHandshakeSendNanos;
+		private int handshakeRetries;
 
 		private Session(String matchId, long peerMemberId, String peerDisplayName, PartyDuelMetadata localMetadata,
 			boolean outboundInvite, long startedNanos, PartySessionStateMachine machine)
@@ -623,6 +663,8 @@ public final class BattlePartyCoordinator
 			this.localMetadata = localMetadata;
 			this.outboundInvite = outboundInvite;
 			this.startedNanos = startedNanos;
+			this.lastProgressNanos = startedNanos;
+			this.lastHandshakeSendNanos = startedNanos;
 			this.machine = machine;
 		}
 	}

@@ -20,6 +20,7 @@ import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.UnitCard;
 import com.osrstcgbattles.integration.CatalogCardLookup;
 import com.osrstcgbattles.integration.CatalogDeckFactory;
+import com.osrstcgbattles.integration.StarterDeckFactory;
 import com.osrstcgbattles.match.PartyMatchCoordinator;
 import com.osrstcgbattles.persist.DeckProfile;
 import com.osrstcgbattles.persist.DeckProfileCodec;
@@ -94,9 +95,13 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	@Inject
 	private OkHttpClient httpClient;
 
+	@Inject
+	private Gson gson;
+
 	private BattleCardCatalog catalog;
 	private CatalogCardLookup cardLookup;
 	private DeckValidator deckValidator;
+	private StarterDeckFactory starterDeckFactory;
 	private DeckProfileCodec profileCodec;
 	private DeckProfileRepository profileRepository;
 	private OsrsTcgBattlesPanel panel;
@@ -112,11 +117,13 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	private int partyUiRefreshTicks;
 	private final Object stateLock = new Object();
 	private boolean running;
+	private boolean startingUp;
 	private long lifecycleGeneration;
 	private long partySessionGeneration;
 	private String partyMatchId;
 	private BattlePartyListener partyListener;
 	private String partyUserMessage;
+	private boolean partySubmissionPending;
 	private final OwnedCardCollectionBridge.Listener collectionListener = snapshot -> refreshUi();
 
 	@Provides
@@ -132,14 +139,16 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		SharedNpcImageCache cache;
 		synchronized (stateLock)
 		{
-			catalog = new BattleCardCatalogLoader().loadDefault();
+			catalog = new BattleCardCatalogLoader(gson).loadDefault();
+			starterDeckFactory = new StarterDeckFactory(catalog);
 			cardLookup = new CatalogCardLookup(catalog);
 			deckValidator = new DeckValidator();
-			profileCodec = new DeckProfileCodec(new Gson());
+			profileCodec = new DeckProfileCodec(gson);
 			profileRepository = loadProfileRepository();
 			npcImageCache = new SharedNpcImageCache(httpClient);
 			cache = npcImageCache;
 			running = true;
+			startingUp = true;
 			generation = ++lifecycleGeneration;
 		}
 		// Started immediately after construction, with no early-return path in between: every check
@@ -186,6 +195,10 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		}
 		battlePartyService.addListener(listener);
 		battlePartyService.start();
+		synchronized (stateLock)
+		{
+			if (isCurrent(generation)) startingUp = false;
+		}
 		refreshUi(generation);
 	}
 
@@ -202,6 +215,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		synchronized (stateLock)
 		{
 			running = false;
+			startingUp = false;
 			shutdownGeneration = ++lifecycleGeneration;
 			partySessionGeneration++;
 			oldNavigation = navigationButton;
@@ -221,6 +235,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			unknownOwnershipTicks = 0;
 			partyUiRefreshTicks = 0;
 			partyUserMessage = null;
+			partySubmissionPending = false;
 		}
 
 		battlePartyService.removeListener(oldPartyListener);
@@ -256,6 +271,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
 		boolean abortTransport = battlePartyService.getSnapshot().canAbort();
+		boolean startupRefresh;
 		long generation;
 		BattlePartyListener oldPartyListener;
 		BattlePartyListener newPartyListener;
@@ -265,20 +281,26 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			{
 				return;
 			}
-			generation = ++lifecycleGeneration;
+			startupRefresh = startingUp;
+			generation = startupRefresh ? lifecycleGeneration : ++lifecycleGeneration;
 			partySessionGeneration++;
-			oldPartyListener = partyListener;
-			newPartyListener = createPartyListener(generation);
-			partyListener = newPartyListener;
+			oldPartyListener = startupRefresh ? null : partyListener;
+			newPartyListener = startupRefresh ? null : createPartyListener(generation);
+			if (!startupRefresh) partyListener = newPartyListener;
 			pendingPartyDeck = null;
 			profileRepository = loadProfileRepository();
 			unknownOwnershipTicks = 0;
 			partyUserMessage = null;
+			partySubmissionPending = false;
 		}
 		// Both calls dispatch to other plugins' subscribers, so they must run outside stateLock.
 		collectionBridge.invalidate();
 		collectionBridge.queryNow();
 		if (abortTransport) battlePartyService.abort();
+		if (startupRefresh)
+		{
+			return;
+		}
 		runOnEdtAndWait(() -> {
 			clearPartyMatchOnEdt(generation, true, true);
 			DeckBuilderWindow builder;
@@ -303,14 +325,22 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	public void onPluginChanged(PluginChanged event)
 	{
 		boolean queryOwnership;
+		boolean invalidateOwnership;
 		synchronized (stateLock)
 		{
-			queryOwnership = running && event.isLoaded() && event.getPlugin() != null
+			boolean collectionPlugin = running && event.getPlugin() != null
 				&& "OSRS TCG".equals(event.getPlugin().getName());
-			if (queryOwnership)
+			queryOwnership = collectionPlugin && event.isLoaded();
+			invalidateOwnership = collectionPlugin && !event.isLoaded();
+			if (queryOwnership || invalidateOwnership)
 			{
 				unknownOwnershipTicks = 0;
 			}
+		}
+		if (invalidateOwnership)
+		{
+			collectionBridge.invalidate();
+			refreshUi();
 		}
 		if (queryOwnership)
 		{
@@ -323,6 +353,9 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	{
 		boolean refreshPartyUi = false;
 		boolean queryOwnership = false;
+		PartyMatchCoordinator matchCoordinator;
+		long generation;
+		long sessionGeneration;
 		synchronized (stateLock)
 		{
 			if (!running)
@@ -343,6 +376,20 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				unknownOwnershipTicks = 0;
 				queryOwnership = true;
 			}
+			matchCoordinator = partyMatchCoordinator;
+			generation = lifecycleGeneration;
+			sessionGeneration = partySessionGeneration;
+		}
+		if (matchCoordinator != null)
+		{
+			SwingUtilities.invokeLater(() -> {
+				synchronized (stateLock)
+				{
+					if (!isPartySessionCurrent(generation, sessionGeneration)
+						|| partyMatchCoordinator != matchCoordinator) return;
+				}
+				matchCoordinator.onTick();
+			});
 		}
 		if (queryOwnership)
 		{
@@ -407,7 +454,9 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		OwnedCardCollectionSnapshot snapshot = collectionBridge.snapshot();
 		synchronized (stateLock)
 		{
-			return deckValidator.validate(deck, cardLookup, snapshot.getOwnedNames(), snapshot.isKnown());
+			boolean builtIn = starterDeckFactory != null && starterDeckFactory.isUnmodifiedStarter(deck);
+			return deckValidator.validate(deck, cardLookup, snapshot.getOwnedNames(),
+				builtIn ? false : snapshot.isKnown());
 		}
 	}
 
@@ -610,7 +659,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				{
 					localBattleWindow.dispose();
 				}
-				localBattleWindow = new LocalBattleWindow(engine, match, cardArtProvider());
+				localBattleWindow = new LocalBattleWindow(engine, match, currentCatalog, cardArtProvider());
 				localBattleWindow.showWindow();
 			}
 		});
@@ -684,20 +733,31 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			showPartyMessage(generation, "Select an eligible RuneLite party opponent");
 			return;
 		}
+		if (!beginPartySubmission(generation))
+		{
+			showPartyMessage(generation, "A party duel request is already being submitted");
+			return;
+		}
 		PartyDeckMetadata metadata = preparePartyDeck(generation);
 		if (metadata == null)
 		{
+			endPartySubmission(generation);
 			return;
 		}
 		try
 		{
-			battlePartyService.invite(memberId, metadata.catalogHash, metadata.rulesetVersion,
-				metadata.deckId, metadata.commitment);
-			showPartyMessage(generation, null);
+			if (!battlePartyService.invite(memberId, metadata.catalogHash, metadata.rulesetVersion,
+				metadata.deckId, metadata.commitment))
+			{
+				clearPendingPartyDeck(generation, metadata.sessionGeneration);
+				endPartySubmission(generation);
+				showPartyMessage(generation, "A party duel request is already being submitted");
+			}
 		}
 		catch (RuntimeException exception)
 		{
 			clearPendingPartyDeck(generation, metadata.sessionGeneration);
+			endPartySubmission(generation);
 			showPartyMessage(generation, "Unable to send the party duel invitation");
 		}
 	}
@@ -710,20 +770,31 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		{
 			return;
 		}
+		if (!beginPartySubmission(generation))
+		{
+			showPartyMessage(generation, "A party duel request is already being submitted");
+			return;
+		}
 		PartyDeckMetadata metadata = preparePartyDeck(generation);
 		if (metadata == null)
 		{
+			endPartySubmission(generation);
 			return;
 		}
 		try
 		{
-			battlePartyService.accept(metadata.catalogHash, metadata.rulesetVersion,
-				metadata.deckId, metadata.commitment);
-			showPartyMessage(generation, null);
+			if (!battlePartyService.accept(metadata.catalogHash, metadata.rulesetVersion,
+				metadata.deckId, metadata.commitment))
+			{
+				clearPendingPartyDeck(generation, metadata.sessionGeneration);
+				endPartySubmission(generation);
+				showPartyMessage(generation, "A party duel request is already being submitted");
+			}
 		}
 		catch (RuntimeException exception)
 		{
 			clearPendingPartyDeck(generation, metadata.sessionGeneration);
+			endPartySubmission(generation);
 			showPartyMessage(generation, "Unable to accept the party duel invitation");
 		}
 	}
@@ -751,6 +822,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				if (!isCurrent(generation)) return;
 				sessionGeneration = ++partySessionGeneration;
 				pendingPartyDeck = null;
+				partySubmissionPending = false;
 			}
 			queuePartyMatchClear(generation, sessionGeneration, true);
 			if (battlePartyService.getSnapshot().canAbort()) battlePartyService.abort();
@@ -766,6 +838,24 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		}
 	}
 
+	private boolean beginPartySubmission(long generation)
+	{
+		synchronized (stateLock)
+		{
+			if (!isCurrent(generation) || partySubmissionPending) return false;
+			partySubmissionPending = true;
+			return true;
+		}
+	}
+
+	private void endPartySubmission(long generation)
+	{
+		synchronized (stateLock)
+		{
+			if (isCurrent(generation)) partySubmissionPending = false;
+		}
+	}
+
 	private PartyDeckMetadata preparePartyDeck(long generation)
 	{
 		Deck selected;
@@ -778,9 +868,10 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				return null;
 			}
 			DeckProfile profile = profileRepository.getCurrent();
-			selected = profile.getSelectedDeckId().flatMap(id -> profile.getDecks().stream()
-				.filter(deck -> deck.getId().equals(id)).findFirst()).orElse(null);
-			currentCatalog = catalog;
+				selected = profile.getSelectedDeckId().flatMap(id -> profile.getDecks().stream()
+					.filter(deck -> deck.getId().equals(id)).findFirst()).orElse(null);
+				currentCatalog = catalog;
+				partyUserMessage = null;
 		}
 		if (currentCatalog == null)
 		{
@@ -793,10 +884,9 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		{
 			randomFallback = true;
 		}
-		else if (!collection.isKnown())
+		else if (!collection.isKnown() && !isUnmodifiedStarter(selected))
 		{
-			showPartyMessage(generation, "Load your card collection before starting a friend duel");
-			return null;
+			randomFallback = true;
 		}
 		else if (!validate(selected).isValid())
 		{
@@ -885,10 +975,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 					currentCatalog = catalog;
 					currentValidator = deckValidator;
 					currentLookup = cardLookup;
-					if (snapshot.getStatus() != PartyDuelSnapshot.Status.TERMINAL)
-					{
-						partyUserMessage = null;
-					}
+					partySubmissionPending = false;
 				}
 				SwingUtilities.invokeLater(() -> handlePartySnapshotOnEdt(generation, sessionGeneration,
 					snapshot, localMemberId, frozenDeck, currentCatalog, currentValidator, currentLookup));
@@ -906,6 +993,20 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				}
 				SwingUtilities.invokeLater(() -> receivePartyApplicationOnEdt(
 					generation, sessionGeneration, message));
+			}
+
+			@Override
+			public void onPartyOperationFailed(String message)
+			{
+				synchronized (stateLock)
+				{
+					if (!isCurrent(generation) || partyListener != this) return;
+					pendingPartyDeck = null;
+					partySubmissionPending = false;
+					partySessionGeneration++;
+					partyUserMessage = message;
+				}
+				refreshUi(generation);
 			}
 		};
 	}
@@ -976,7 +1077,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				currentLookup, new CatalogDeckFactory(currentCatalog), frozenDeck,
 				battlePartyService::queueApplication, secureRandom.nextLong());
 			PartyMatchCoordinator createdCoordinator = coordinator;
-			window = new PartyBattleWindow(coordinator,
+			window = new PartyBattleWindow(coordinator, currentCatalog,
 				() -> abortPartyMatchFromWindow(generation, sessionGeneration, createdCoordinator), cardArtProvider(),
 				localParticipant, opponentParticipant);
 		}
@@ -1123,7 +1224,33 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	{
 		DeckProfileRepository repository = new DeckProfileRepository(configManager, profileCodec);
 		repository.reload();
+		DeckProfile current = repository.getCurrent();
+		List<Deck> decks = new ArrayList<>(current.getDecks());
+		boolean changed = false;
+		for (Deck starter : starterDeckFactory.createStarterDecks())
+		{
+			if (decks.stream().noneMatch(deck -> deck.getId().equals(starter.getId())))
+			{
+				decks.add(starter);
+				changed = true;
+			}
+		}
+		String selected = current.getSelectedDeckId().orElse(null);
+		if (selected == null)
+		{
+			selected = StarterDeckFactory.DEATHRATTLE_ID;
+			changed = true;
+		}
+		if (changed) repository.save(new DeckProfile(decks, selected));
 		return repository;
+	}
+
+	private boolean isUnmodifiedStarter(Deck deck)
+	{
+		synchronized (stateLock)
+		{
+			return starterDeckFactory != null && starterDeckFactory.isUnmodifiedStarter(deck);
+		}
 	}
 
 	private void refreshUi()

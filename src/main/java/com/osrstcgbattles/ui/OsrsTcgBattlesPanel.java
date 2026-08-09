@@ -200,7 +200,8 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 			+ section("1. Opening Hand", "Draw " + GwentEngine.OPENING_HAND_SIZE
 				+ " cards. Click cards to replace them during the mulligan, then press <b>Keep Hand</b>.")
 			+ section("2. Mana", "You begin with 1 mana crystal. Your maximum mana grows by one each turn, up to "
-				+ GwentEngine.MAXIMUM_MANA + ", and refills at the start of your turn.")
+				+ GwentEngine.MAXIMUM_MANA + ", and refills at the start of your turn. Some special cards grant extra "
+				+ "mana for the current turn.")
 			+ section("3. Playing Cards", "Click a glowing card in your hand. Units enter your battlefield; special cards "
 				+ "resolve their effect immediately. You may control up to " + GwentEngine.BATTLEFIELD_LIMIT + " units.")
 			+ section("4. Deploy Effects", "Some cards damage an enemy or strengthen an ally when played. After selecting "
@@ -208,12 +209,16 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 			+ section("5. Combat", "New units have summoning sickness and cannot attack until your next turn. Select a ready "
 				+ "unit, then attack an enemy unit or, if the enemy board is empty, the enemy hero. Units deal damage to "
 				+ "each other simultaneously.")
-			+ section("6. Hand and Fatigue", "Your hand holds at most " + GwentEngine.HAND_LIMIT
+			+ section("6. Keywords", "Shield blocks the first damage; Lifesteal heals your hero; Poisonous destroys damaged "
+				+ "units; Rush attacks units immediately; Taunt must be attacked first; Stealth prevents enemy targeting "
+				+ "until attacking; and Deathrattle triggers when a unit dies. Nex can only be summoned while all four "
+				+ "God Wars commanders are allied, and summoning her wins the game.")
+			+ section("7. Hand and Fatigue", "Your hand holds at most " + GwentEngine.HAND_LIMIT
 				+ " cards. When your deck is empty, failed draws deal increasing fatigue damage.")
-			+ section("7. Controls", "<b>Right-click</b> or press <b>Esc</b> to cancel a selection. Press <b>End Turn</b> when "
+			+ section("8. Controls", "<b>Right-click</b> or press <b>Esc</b> to cancel a selection. Press <b>End Turn</b> when "
 				+ "finished. You may concede at any time.")
 			+ section("Friend Duels", "Join the same RuneLite party, choose an eligible member on the Play tab, and send an "
-				+ "invite. Both players need a valid selected deck and refreshed collection.")
+				+ "invite. A random 30-card deck is supplied when your selected deck or collection is unavailable.")
 			+ "<p style='color:#9f9685'><i>Tip: green borders are playable or ready, gold is selected, and red marks legal targets.</i></p>"
 			+ "</body></html>";
 	}

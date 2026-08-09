@@ -87,12 +87,19 @@ public final class StateHasher
 			out.writeInt(unit.getCurrentAttack());
 			out.writeInt(unit.getCurrentHealth());
 			out.writeBoolean(unit.isReady());
+			out.writeBoolean(unit.isShielded());
+			out.writeBoolean(unit.isStealthed());
+			out.writeBoolean(unit.isRushRestricted());
 			writeCard(out, unit.getDefinition());
 		}
 	}
 
 	private static void writeCard(DataOutputStream out, Card card) throws IOException
 	{
+		if (!(card instanceof UnitCard) && !(card instanceof SpecialCard))
+		{
+			throw new IllegalArgumentException("unsupported card type");
+		}
 		out.writeUTF(card instanceof UnitCard ? "UNIT" : "SPECIAL");
 		out.writeUTF(card.getId());
 		out.writeUTF(card.getName());
@@ -104,8 +111,21 @@ public final class StateHasher
 			out.writeInt(unit.getBaseAttack());
 			out.writeInt(unit.getBaseHealth());
 			effects = unit.getDeployEffects();
+			out.writeInt(unit.getKeywords().size());
+			for (UnitKeyword keyword : unit.getKeywords()) out.writeUTF(keyword.name());
+			out.writeInt(unit.getDeathrattles().size());
+			for (DeathrattleEffect effect : unit.getDeathrattles())
+			{
+				out.writeUTF(effect.getType().name());
+				out.writeInt(effect.getAmount());
+			}
 		}
-		else effects = ((SpecialCard) card).getDeployEffects();
+		else
+		{
+			effects = ((SpecialCard) card).getDeployEffects();
+			out.writeInt(0);
+			out.writeInt(0);
+		}
 		out.writeInt(effects.size());
 		for (DeployEffect effect : effects)
 		{

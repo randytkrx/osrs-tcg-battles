@@ -31,21 +31,26 @@ public final class BattlePartyService
 	private final WSClient wsClient;
 	private final EventBus eventBus;
 	private final ClientThread clientThread;
-	private final CanonicalPartyJsonCodec applicationCodec = new CanonicalPartyJsonCodec(new Gson());
+	private final Gson gson;
+	private final CanonicalPartyJsonCodec applicationCodec;
 	private final Deque<QueuedApplication> applicationQueue = new ArrayDeque<>();
 	private final CopyOnWriteArrayList<BattlePartyListener> listeners = new CopyOnWriteArrayList<>();
 	private volatile PartyDuelSnapshot snapshot = PartyDuelSnapshot.idle();
 	private volatile List<PartyOpponent> eligibleOpponents = Collections.emptyList();
 	private volatile boolean started;
 	private BattlePartyCoordinator coordinator;
+	private boolean submissionPending;
 
 	@Inject
-	public BattlePartyService(PartyService partyService, WSClient wsClient, EventBus eventBus, ClientThread clientThread)
+	public BattlePartyService(PartyService partyService, WSClient wsClient, EventBus eventBus, ClientThread clientThread,
+		Gson gson)
 	{
 		this.partyService = partyService;
 		this.wsClient = wsClient;
 		this.eventBus = eventBus;
 		this.clientThread = clientThread;
+		this.gson = gson;
+		this.applicationCodec = new CanonicalPartyJsonCodec(gson);
 	}
 
 	public synchronized void start()
@@ -69,6 +74,7 @@ public final class BattlePartyService
 	{
 		if (!started) return;
 		started = false;
+		submissionPending = false;
 		applicationQueue.clear();
 		try
 		{
@@ -87,30 +93,80 @@ public final class BattlePartyService
 		});
 	}
 
-	public void invite(long recipientMemberId, String catalogHash, int rulesetVersion, String deckId,
+	public boolean invite(long recipientMemberId, String catalogHash, int rulesetVersion, String deckId,
 		String deckCommitment)
 	{
-		PartyDuelMetadata metadata = new PartyDuelMetadata(catalogHash, rulesetVersion, deckId, deckCommitment);
-		clientThread.invoke(() ->
+		synchronized (this)
 		{
-			if (!started) return;
-			PartyMember local = requireLocalMember();
-			PartyMember peer = requireEligiblePeer(recipientMemberId, local.getMemberId());
-			ensureCoordinator(local.getMemberId()).invite(peer.getMemberId(), peer.getDisplayName(), metadata,
-				System.nanoTime());
-			flushAndPublish();
-		});
+			if (!started || submissionPending) return false;
+			submissionPending = true;
+		}
+		PartyDuelMetadata metadata = new PartyDuelMetadata(catalogHash, rulesetVersion, deckId, deckCommitment);
+		try
+		{
+			clientThread.invoke(() ->
+			{
+				try
+				{
+					if (!started) throw new IllegalStateException("party service is stopped");
+					PartyMember local = requireLocalMember();
+					PartyMember peer = requireEligiblePeer(recipientMemberId, local.getMemberId());
+					ensureCoordinator(local.getMemberId()).invite(peer.getMemberId(), peer.getDisplayName(), metadata,
+						System.nanoTime());
+					flushAndPublish();
+				}
+				catch (RuntimeException exception)
+				{
+					notifyOperationFailed("Unable to send the party duel invitation");
+				}
+				finally
+				{
+					synchronized (BattlePartyService.this) { submissionPending = false; }
+				}
+			});
+		}
+		catch (RuntimeException exception)
+		{
+			synchronized (this) { submissionPending = false; }
+			return false;
+		}
+		return true;
 	}
 
-	public void accept(String catalogHash, int rulesetVersion, String deckId, String deckCommitment)
+	public boolean accept(String catalogHash, int rulesetVersion, String deckId, String deckCommitment)
 	{
-		PartyDuelMetadata metadata = new PartyDuelMetadata(catalogHash, rulesetVersion, deckId, deckCommitment);
-		clientThread.invoke(() ->
+		synchronized (this)
 		{
-			if (!started || coordinator == null) return;
-			coordinator.accept(metadata);
-			flushAndPublish();
-		});
+			if (!started || submissionPending) return false;
+			submissionPending = true;
+		}
+		PartyDuelMetadata metadata = new PartyDuelMetadata(catalogHash, rulesetVersion, deckId, deckCommitment);
+		try
+		{
+			clientThread.invoke(() ->
+			{
+				try
+				{
+					if (!started || coordinator == null) throw new IllegalStateException("no invitation to accept");
+					coordinator.accept(metadata);
+					flushAndPublish();
+				}
+				catch (RuntimeException exception)
+				{
+					notifyOperationFailed("Unable to accept the party duel invitation");
+				}
+				finally
+				{
+					synchronized (BattlePartyService.this) { submissionPending = false; }
+				}
+			});
+		}
+		catch (RuntimeException exception)
+		{
+			synchronized (this) { submissionPending = false; }
+			return false;
+		}
+		return true;
 	}
 
 	public void decline()
@@ -178,6 +234,15 @@ public final class BattlePartyService
 	}
 	public void removeListener(BattlePartyListener listener) { listeners.remove(listener); }
 
+	private void notifyOperationFailed(String message)
+	{
+		for (BattlePartyListener listener : listeners)
+		{
+			try { listener.onPartyOperationFailed(message); }
+			catch (RuntimeException ignored) { /* A listener must not break service processing. */ }
+		}
+	}
+
 	@Subscribe
 	public void onBattlePartyEnvelope(BattlePartyEnvelope message)
 	{
@@ -235,7 +300,7 @@ public final class BattlePartyService
 	{
 		if (coordinator == null || coordinator.getLocalMemberId() != localMemberId)
 		{
-			coordinator = new BattlePartyCoordinator(localMemberId);
+			coordinator = new BattlePartyCoordinator(localMemberId, gson);
 		}
 		return coordinator;
 	}

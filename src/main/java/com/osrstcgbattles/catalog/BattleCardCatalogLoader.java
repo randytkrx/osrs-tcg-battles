@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public final class BattleCardCatalogLoader
 {
 	public static final int SUPPORTED_CATALOG_VERSION = 2;
-	public static final int SUPPORTED_RULESET_VERSION = 3;
+	public static final int SUPPORTED_RULESET_VERSION = 7;
 	public static final String DEFAULT_RESOURCE = "/com/osrstcgbattles/battle-cards.json";
 
 	private static final Pattern ID_PATTERN = Pattern.compile("[a-z0-9]+(?:-[a-z0-9]+)*");
@@ -35,12 +35,7 @@ public final class BattleCardCatalogLoader
 
 	private final Gson gson;
 
-	public BattleCardCatalogLoader()
-	{
-		this(new Gson());
-	}
-
-	BattleCardCatalogLoader(Gson gson)
+	public BattleCardCatalogLoader(Gson gson)
 	{
 		this.gson = gson;
 	}
@@ -225,6 +220,7 @@ public final class BattleCardCatalogLoader
 			throw invalid(source, path + ".abilities must not be empty");
 		}
 		List<CardAbility> abilities = new ArrayList<>();
+		Set<String> commandTargets = new HashSet<>();
 		for (int i = 0; i < raw.size(); i++)
 		{
 			AbilityDto ability = raw.get(i);
@@ -249,13 +245,78 @@ public final class BattleCardCatalogLoader
 					throw invalid(source, abilityPath + " VANILLA must not have parameters");
 				}
 			}
+			else if (ability.type == AbilityType.GAIN_MANA)
+			{
+				validateManaParams(category, numeric, strings, source, abilityPath);
+			}
+			else if (isKeyword(ability.type))
+			{
+				if (category != CardCategory.UNIT || !numeric.isEmpty() || !strings.isEmpty())
+				{
+					throw invalid(source, abilityPath + " keyword requires a unit with no parameters");
+				}
+			}
+			else if (isDeathrattle(ability.type))
+			{
+				validateDeathrattleParams(category, numeric, strings, source, abilityPath);
+			}
 			else
 			{
 				validateEffectParams(ability.type, category, numeric, strings, source, abilityPath);
+				String target = strings.get("target");
+				if (!"SELF".equals(target))
+				{
+					commandTargets.add(target);
+				}
 			}
 			abilities.add(new CardAbility(ability.type, numeric, strings));
 		}
+		if (commandTargets.size() > 1)
+		{
+			throw invalid(source, path + ".abilities require incompatible command targets");
+		}
 		return abilities;
+	}
+
+	private static boolean isKeyword(AbilityType type)
+	{
+		return type == AbilityType.SHIELD || type == AbilityType.LIFESTEAL || type == AbilityType.POISONOUS
+			|| type == AbilityType.RUSH || type == AbilityType.TAUNT || type == AbilityType.STEALTH
+			|| type == AbilityType.NEX_ASCENSION;
+	}
+
+	private static boolean isDeathrattle(AbilityType type)
+	{
+		return type == AbilityType.DEATHRATTLE_DAMAGE_HERO || type == AbilityType.DEATHRATTLE_DRAW
+			|| type == AbilityType.DEATHRATTLE_SUMMON;
+	}
+
+	private static void validateDeathrattleParams(CardCategory category, Map<String, Integer> numeric,
+		Map<String, String> strings, String source, String path)
+	{
+		if (category != CardCategory.UNIT || !numeric.keySet().equals(EFFECT_PARAM_KEYS) || !strings.isEmpty())
+		{
+			throw invalid(source, path + " Deathrattle requires a unit with only numeric amount");
+		}
+		int amount = numeric.get("amount");
+		if (amount < 1 || amount > 5)
+		{
+			throw invalid(source, path + ".numericParams.amount must be between 1 and 5");
+		}
+	}
+
+	private static void validateManaParams(CardCategory category, Map<String, Integer> numeric,
+		Map<String, String> strings, String source, String path)
+	{
+		if (category != CardCategory.SPECIAL || !numeric.keySet().equals(EFFECT_PARAM_KEYS) || !strings.isEmpty())
+		{
+			throw invalid(source, path + " GAIN_MANA requires a special card with only numeric amount");
+		}
+		int amount = numeric.get("amount");
+		if (amount < 1 || amount > 2)
+		{
+			throw invalid(source, path + ".numericParams.amount must be 1 or 2");
+		}
 	}
 
 	private static void validateEffectParams(AbilityType type, CardCategory category, Map<String, Integer> numeric,

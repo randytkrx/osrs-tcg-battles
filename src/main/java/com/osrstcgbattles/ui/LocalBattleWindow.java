@@ -2,7 +2,6 @@ package com.osrstcgbattles.ui;
 
 import com.osrstcgbattles.art.CardArtProvider;
 import com.osrstcgbattles.catalog.BattleCardCatalog;
-import com.osrstcgbattles.catalog.BattleCardCatalogLoader;
 import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.CommandResult;
 import com.osrstcgbattles.engine.ConcedeCommand;
@@ -46,12 +45,13 @@ public final class LocalBattleWindow
 	private PlayerId shownSeat = PlayerId.PLAYER_ONE;
 	private boolean concedeConfirmationOpen;
 
-	public LocalBattleWindow(GwentEngine engine, MatchState initialState, CardArtProvider art)
+	public LocalBattleWindow(GwentEngine engine, MatchState initialState, BattleCardCatalog catalog,
+		CardArtProvider art)
 	{
 		this.engine = Objects.requireNonNull(engine, "engine");
 		this.state = Objects.requireNonNull(initialState, "initialState");
+		Objects.requireNonNull(catalog, "catalog");
 		Objects.requireNonNull(art, "art");
-		BattleCardCatalog catalog = new BattleCardCatalogLoader().loadDefault();
 		runOnEdtAndWait(() -> initialize(catalog, art));
 	}
 

@@ -90,6 +90,23 @@ public final class BattlePartyCrypto
 		}
 	}
 
+	public static String authenticationCode(byte[] sessionKey, String matchId, long firstMemberId,
+		long secondMemberId) throws GeneralSecurityException
+	{
+		if (sessionKey == null || sessionKey.length != AES_KEY_BYTES || matchId == null || matchId.isEmpty())
+		{
+			throw new GeneralSecurityException("invalid authentication-code input");
+		}
+		long low = Math.min(firstMemberId, secondMemberId);
+		long high = Math.max(firstMemberId, secondMemberId);
+		Mac mac = Mac.getInstance("HmacSHA256");
+		mac.init(new SecretKeySpec(sessionKey, "HmacSHA256"));
+		byte[] digest = mac.doFinal(fields("osrs-tcg-auth-v1", matchId,
+			Long.toString(low), Long.toString(high)));
+		int value = ((digest[0] & 0xff) << 16 | (digest[1] & 0xff) << 8 | (digest[2] & 0xff)) % 1_000_000;
+		return String.format("%03d-%03d", value / 1000, value % 1000);
+	}
+
 	/** Combines both contributed salts without making either peer the protocol leader. */
 	public static byte[] combineHandshakeSalts(byte[] localSalt, long localMemberId, byte[] peerSalt,
 		long peerMemberId) throws GeneralSecurityException

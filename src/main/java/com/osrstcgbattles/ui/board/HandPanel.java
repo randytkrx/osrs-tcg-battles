@@ -8,6 +8,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
@@ -31,6 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HandPanel extends JPanel
 {
+	public interface CardDragListener
+	{
+		void onCardDragged(String cardId, Point boardPoint);
+
+		void onCardDropped(String cardId, Point boardPoint);
+	}
+
 	public enum Orientation
 	{
 		TOP,
@@ -51,6 +59,7 @@ public class HandPanel extends JPanel
 	private String selectedCardId;
 	private JComponent hoveredTile;
 	private Consumer<String> cardClickListener = cardId -> { };
+	private CardDragListener cardDragListener;
 	private Runnable cancelListener = () -> { };
 	private boolean faceDown;
 	private Set<String> playableCardIds = Collections.emptySet();
@@ -157,6 +166,11 @@ public class HandPanel extends JPanel
 		cancelListener = listener == null ? () -> { } : listener;
 	}
 
+	public void setCardDragListener(CardDragListener listener)
+	{
+		cardDragListener = listener;
+	}
+
 	@Override
 	public void doLayout()
 	{
@@ -172,8 +186,50 @@ public class HandPanel extends JPanel
 	{
 		tiles.add(tile);
 		cardIds.add(cardId);
-		tile.addMouseListener(new MouseAdapter()
+		MouseAdapter mouse = new MouseAdapter()
 		{
+			private Point pressed;
+			private boolean dragged;
+
+			@Override
+			public void mousePressed(MouseEvent event)
+			{
+				if (!hidden && SwingUtilities.isLeftMouseButton(event))
+				{
+					pressed = event.getPoint();
+					dragged = false;
+				}
+			}
+
+			@Override
+			public void mouseDragged(MouseEvent event)
+			{
+				if (pressed == null || cardDragListener == null)
+				{
+					return;
+				}
+				if (!dragged && pressed.distance(event.getPoint()) < 5)
+				{
+					return;
+				}
+				dragged = true;
+				cardDragListener.onCardDragged(cardId, pointOnBoard(tile, event.getPoint()));
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent event)
+			{
+				if (dragged && cardDragListener != null)
+				{
+					Point dropPoint = pointOnBoard(tile, event.getPoint());
+					CardDragListener listener = cardDragListener;
+					// Playing a card rebuilds this hand. Defer it until Swing finishes dispatching
+					// MOUSE_RELEASED to the tile that is about to be removed.
+					SwingUtilities.invokeLater(() -> listener.onCardDropped(cardId, dropPoint));
+				}
+				pressed = null;
+			}
+
 			@Override
 			public void mouseClicked(MouseEvent event)
 			{
@@ -181,7 +237,7 @@ public class HandPanel extends JPanel
 				{
 					cancelListener.run();
 				}
-				else if (!hidden)
+				else if (!hidden && !dragged)
 				{
 					cardClickListener.accept(cardId);
 				}
@@ -206,9 +262,16 @@ public class HandPanel extends JPanel
 					layoutTiles();
 				}
 			}
-		});
+		};
+		tile.addMouseListener(mouse);
+		tile.addMouseMotionListener(mouse);
 		add(tile, 0);
 		restoreZOrder();
+	}
+
+	private Point pointOnBoard(JComponent tile, Point point)
+	{
+		return getParent() == null ? new Point(point) : SwingUtilities.convertPoint(tile, point, getParent());
 	}
 
 	private void clearTiles()

@@ -14,6 +14,7 @@ import com.osrstcgbattles.engine.PlayCardCommand;
 import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.SpecialCard;
 import com.osrstcgbattles.engine.UnitCard;
+import com.osrstcgbattles.engine.UnitKeyword;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -67,6 +68,30 @@ public final class BattleInteraction
 		return targetPending;
 	}
 
+	public Optional<String> targetPrompt()
+	{
+		Card card = selectedCardId == null ? null : findInHand(selectedCardId);
+		if (!targetPending || card == null)
+		{
+			return Optional.empty();
+		}
+		DeployEffect.Target target = null;
+		List<String> descriptions = new ArrayList<>();
+		for (DeployEffect effect : effects(card))
+		{
+			if (effect.getTarget() == DeployEffect.Target.SELF) continue;
+			target = effect.getTarget();
+			descriptions.add(effect.getType() == DeployEffect.Type.DAMAGE
+				? effect.getAmount() + " damage" : "+" + effect.getAmount() + "/+" + effect.getAmount());
+		}
+		if (target == null)
+		{
+			return Optional.empty();
+		}
+		String unit = target == DeployEffect.Target.ALLIED_UNIT ? "an allied unit" : "an enemy unit";
+		return Optional.of("Select " + unit + " for " + String.join(" and ", descriptions));
+	}
+
 	/** True when the selected card can be played immediately without a deploy target. */
 	public boolean isSelectionComplete()
 	{
@@ -112,11 +137,16 @@ public final class BattleInteraction
 			return Collections.emptyList();
 		}
 		List<BoardUnit> targets = new ArrayList<>();
+		boolean taunt = selectedAttackerId != null && state.getBoard().getUnits(localSeat.opponent()).stream()
+			.anyMatch(unit -> unit.hasKeyword(UnitKeyword.TAUNT) && !unit.isStealthed());
 		for (PlayerId owner : PlayerId.values())
 		{
 			for (BoardUnit unit : state.getBoard().getUnits(owner))
 			{
-				if (selectedAttackerId != null ? owner == localSeat.opponent() : isLegalTarget(card, owner))
+				if (selectedAttackerId != null
+					? owner == localSeat.opponent() && !unit.isStealthed()
+						&& (!taunt || unit.hasKeyword(UnitKeyword.TAUNT))
+					: isLegalTarget(card, owner) && (owner != localSeat.opponent() || !unit.isStealthed()))
 				{
 					targets.add(unit);
 				}
@@ -182,7 +212,8 @@ public final class BattleInteraction
 			return false;
 		}
 		BoardUnit attacker = findOnBoard(selectedAttackerId);
-		return attacker != null && attacker.isReady() && isOwnedBy(attacker, localSeat);
+		return attacker != null && attacker.isReady() && !attacker.isRushRestricted()
+			&& isOwnedBy(attacker, localSeat);
 	}
 
 	/** Mirrors only the engine's inexpensive, target-independent checks for starting a play. */
@@ -202,6 +233,8 @@ public final class BattleInteraction
 		{
 			return false;
 		}
+		if (card instanceof UnitCard && ((UnitCard) card).hasKeyword(UnitKeyword.NEX_ASCENSION)
+			&& !GwentEngine.hasNexCommanders(state.getBoard(), localSeat)) return false;
 		if (!requiresTarget(card))
 		{
 			return true;
@@ -325,7 +358,8 @@ public final class BattleInteraction
 	{
 		for (DeployEffect effect : effects(card))
 		{
-			if (effect.getTarget() != DeployEffect.Target.SELF)
+			if (effect.getTarget() == DeployEffect.Target.ALLIED_UNIT
+				|| effect.getTarget() == DeployEffect.Target.ENEMY_UNIT)
 			{
 				return true;
 			}

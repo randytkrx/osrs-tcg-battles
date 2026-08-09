@@ -1,6 +1,9 @@
 package com.osrstcgbattles.ui.board;
 
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
+import javax.imageio.ImageIO;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -25,6 +28,18 @@ public class BattleBoardLayoutTest
 		assertEquals(550, center(geometry.getBattlefield()));
 		assertEquals(550, center(geometry.getLocalHero()));
 		assertEquals(550, center(geometry.getLocalHand()));
+	}
+
+	@Test
+	public void boardBackgroundIsPackagedAtItsDesignedAspectRatio() throws Exception
+	{
+		try (InputStream stream = BattleBoardLayoutTest.class.getResourceAsStream("/com/osrstcgbattles/board.png"))
+		{
+			assertTrue(stream != null);
+			BufferedImage image = ImageIO.read(stream);
+			assertEquals(1536, image.getWidth());
+			assertEquals(1024, image.getHeight());
+		}
 	}
 
 	private static void assertGeometry(int width, int height)

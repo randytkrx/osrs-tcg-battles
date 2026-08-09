@@ -22,8 +22,8 @@ public class GwentEngineTest
 		assertEquals(20, state.getPlayer(PlayerId.PLAYER_TWO).getHeroHealth());
 		assertEquals(1, state.getPlayer(PlayerId.PLAYER_ONE).getMana());
 		assertEquals(0, state.getPlayer(PlayerId.PLAYER_TWO).getMana());
-		assertEquals(4, state.getPlayer(PlayerId.PLAYER_ONE).getHand().size());
-		assertEquals(3, state.getPlayer(PlayerId.PLAYER_TWO).getHand().size());
+		assertEquals(6, state.getPlayer(PlayerId.PLAYER_ONE).getHand().size());
+		assertEquals(5, state.getPlayer(PlayerId.PLAYER_TWO).getHand().size());
 		assertEquals(PlayerId.PLAYER_ONE, state.getActivePlayer().get());
 	}
 
@@ -115,6 +115,41 @@ public class GwentEngineTest
 		player = player.drawOne(GwentEngine.HAND_LIMIT);
 		assertEquals(17, player.getHeroHealth());
 		assertEquals(2, player.getFatigue());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unsupportedCardImplementationsAreRejectedAtMatchCreation()
+	{
+		List<Card> unsupported = new ArrayList<>();
+		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		{
+			unsupported.add(new Card()
+			{
+				@Override public String getId() { return "future"; }
+				@Override public String getName() { return "Future"; }
+				@Override public int getManaCost() { return 0; }
+			});
+		}
+		engine.newMatch(unsupported, deck("p2", 2, 2), 1L);
+	}
+
+	@Test
+	public void manaEffectAddsTemporaryManaWithoutRequiringATarget()
+	{
+		List<Card> manaDeck = new ArrayList<>();
+		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		{
+			manaDeck.add(new SpecialCard("lightbearer", "Lightbearer", 0, Collections.singletonList(
+				new DeployEffect(DeployEffect.Type.MANA, DeployEffect.Target.HERO, 1))));
+		}
+		MatchState state = engine.newMatch(manaDeck, deck("p2", 2, 2), 1L);
+
+		CommandResult result = engine.execute(state, new PlayCardCommand(PlayerId.PLAYER_ONE, "lightbearer"));
+
+		assertTrue(result.isAccepted());
+		assertEquals(2, result.getState().getPlayer(PlayerId.PLAYER_ONE).getMana());
+		assertEquals(1, result.getState().getPlayer(PlayerId.PLAYER_ONE).getMaximumMana());
+		assertEquals(1, result.getState().getPlayer(PlayerId.PLAYER_ONE).getGraveyard().size());
 	}
 
 	private MatchState newMatch()

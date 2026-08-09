@@ -34,12 +34,15 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -61,6 +64,7 @@ public final class SharedNpcImageCache
 	private static final String USER_AGENT = "osrs-tcg-battles (shared OSRS-TCG image cache)";
 
 	private final OkHttpClient httpClient;
+	private final Supplier<ExecutorService> executorFactory;
 	private final Map<String, BufferedImage> memory = new LinkedHashMap<String, BufferedImage>(
 		MEMORY_ENTRIES + 1, .75f, true)
 	{
@@ -77,20 +81,25 @@ public final class SharedNpcImageCache
 	@Inject
 	public SharedNpcImageCache(OkHttpClient httpClient)
 	{
+		this(httpClient, () -> Executors.newFixedThreadPool(4, runnable ->
+		{
+			Thread thread = new Thread(runnable, "osrs-tcg-battles-npc-image");
+			thread.setDaemon(true);
+			return thread;
+		}));
+	}
+
+	SharedNpcImageCache(OkHttpClient httpClient, Supplier<ExecutorService> executorFactory)
+	{
 		this.httpClient = httpClient;
+		this.executorFactory = executorFactory;
 	}
 
 	public synchronized void start()
 	{
-		generation++;
 		if (executor == null)
 		{
-			executor = Executors.newFixedThreadPool(4, runnable ->
-			{
-				Thread thread = new Thread(runnable, "osrs-tcg-battles-npc-image");
-				thread.setDaemon(true);
-				return thread;
-			});
+			executor = executorFactory.get();
 		}
 	}
 
@@ -118,18 +127,36 @@ public final class SharedNpcImageCache
 			{
 				currentExecutor = executor;
 				requestGeneration = generation;
-				List<Consumer<BufferedImage>> consumers = pending.computeIfAbsent(url, key -> new ArrayList<>());
-				first = consumers.isEmpty();
-				consumers.add(consumer);
+				if (currentExecutor == null)
+				{
+					first = false;
+				}
+				else
+				{
+					List<Consumer<BufferedImage>> consumers = pending.computeIfAbsent(url, key -> new ArrayList<>());
+					first = consumers.isEmpty();
+					consumers.add(consumer);
+				}
 			}
 		}
 		if (cached != null)
 		{
-			SwingUtilities.invokeLater(() -> consumer.accept(cached));
+			dispatch(Collections.singletonList(consumer), cached, requestGeneration);
 		}
-		else if (first && currentExecutor != null)
+		else if (currentExecutor == null)
 		{
-			currentExecutor.execute(() -> complete(url, requestGeneration, load(url)));
+			dispatch(Collections.singletonList(consumer), null, requestGeneration);
+		}
+		else if (first)
+		{
+			try
+			{
+				currentExecutor.execute(() -> complete(url, requestGeneration, load(url)));
+			}
+			catch (RejectedExecutionException ex)
+			{
+				complete(url, requestGeneration, null);
+			}
 		}
 	}
 
@@ -138,8 +165,12 @@ public final class SharedNpcImageCache
 		final List<Consumer<BufferedImage>> consumers;
 		synchronized (this)
 		{
+			if (requestGeneration != generation)
+			{
+				return;
+			}
 			consumers = pending.remove(url);
-			if (requestGeneration != generation || consumers == null)
+			if (consumers == null)
 			{
 				return;
 			}
@@ -148,11 +179,23 @@ public final class SharedNpcImageCache
 				memory.put(url, image);
 			}
 		}
+		dispatch(consumers, image, requestGeneration);
+	}
+
+	private void dispatch(List<Consumer<BufferedImage>> consumers, BufferedImage image, int requestGeneration)
+	{
 		SwingUtilities.invokeLater(() ->
 		{
-			for (Consumer<BufferedImage> consumer : consumers)
+			synchronized (SharedNpcImageCache.this)
 			{
-				consumer.accept(image);
+				for (Consumer<BufferedImage> consumer : consumers)
+				{
+					if (requestGeneration != generation)
+					{
+						return;
+					}
+					consumer.accept(image);
+				}
 			}
 		});
 	}

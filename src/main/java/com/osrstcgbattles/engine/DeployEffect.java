@@ -8,14 +8,16 @@ public final class DeployEffect
 	public enum Type
 	{
 		BOOST,
-		DAMAGE
+		DAMAGE,
+		MANA
 	}
 
 	public enum Target
 	{
 		SELF,
 		ALLIED_UNIT,
-		ENEMY_UNIT
+		ENEMY_UNIT,
+		HERO
 	}
 
 	private final Type type;
@@ -30,8 +32,9 @@ public final class DeployEffect
 		{
 			throw new IllegalArgumentException("amount must be positive");
 		}
-		if (type == Type.BOOST && target == Target.ENEMY_UNIT
-			|| type == Type.DAMAGE && target != Target.ENEMY_UNIT)
+		if (type == Type.BOOST && target != Target.SELF && target != Target.ALLIED_UNIT
+			|| type == Type.DAMAGE && target != Target.ENEMY_UNIT
+			|| type == Type.MANA && target != Target.HERO)
 		{
 			throw new IllegalArgumentException("target is not valid for " + type);
 		}

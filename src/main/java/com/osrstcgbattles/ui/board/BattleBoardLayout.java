@@ -15,8 +15,9 @@ public final class BattleBoardLayout
 		int safeHeight = Math.max(1, height);
 		int margin = clamp(safeWidth / 90, 6, 14);
 		int rail = clamp(safeWidth * 13 / 100, 92, 145);
-		int fieldX = rail;
-		int fieldWidth = Math.max(1, safeWidth - rail * 2);
+		// Keep play inside the background's clear tabletop; decorative props live around its edges.
+		int fieldWidth = Math.max(1, Math.min(760, safeWidth - rail * 2));
+		int fieldX = (safeWidth - fieldWidth) / 2;
 		int handWidth = Math.min(fieldWidth, 740);
 		int handX = (safeWidth - handWidth) / 2;
 

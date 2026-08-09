@@ -38,12 +38,13 @@ public final class CardArtCatalog
 					continue;
 				}
 				String[] fields = line.split("\t", -1);
-				if (fields.length != 3)
+				if (fields.length < 2 || fields.length > 3)
 				{
 					throw new IllegalStateException("Malformed card art row: " + line);
 				}
 				CardArtSource.Kind kind = CardArtSource.Kind.valueOf(fields[1].trim());
-				loaded.put(key(fields[0]), new CardArtSource(kind, fields[2].trim()));
+				loaded.put(key(fields[0]), new CardArtSource(kind,
+					fields.length == 3 ? fields[2].trim() : ""));
 			}
 		}
 		catch (IOException ex)

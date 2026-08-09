@@ -1,5 +1,6 @@
 package com.osrstcgbattles.ui.board;
 
+import com.google.gson.Gson;
 import com.osrstcgbattles.art.NoCardArtProvider;
 import com.osrstcgbattles.catalog.BattleCard;
 import com.osrstcgbattles.catalog.BattleCardCatalogLoader;
@@ -14,7 +15,7 @@ public class CardTileTest
 	@Test
 	public void faceDownCardsNeverExposeRulesInTooltip()
 	{
-		BattleCard card = new BattleCardCatalogLoader().loadDefault()
+		BattleCard card = new BattleCardCatalogLoader(new Gson()).loadDefault()
 			.findById("misthalin-dark-wizard").get();
 		CardTile tile = new CardTile(card, new NoCardArtProvider());
 

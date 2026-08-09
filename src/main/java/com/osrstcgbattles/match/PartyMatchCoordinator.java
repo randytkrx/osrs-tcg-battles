@@ -46,6 +46,8 @@ public final class PartyMatchCoordinator
 		"OSRS-TCG-PARTY-MATCH-SEED-COMMITMENT-V1".getBytes(StandardCharsets.US_ASCII);
 	private static final long MAX_WIRE_INTEGER = 9_007_199_254_740_991L;
 	private static final int MAX_ID_LENGTH = BattlePartyEnvelope.MAX_ID_LENGTH;
+	// RuneLite game ticks are roughly 600 ms; allow transient reconnects without waiting forever.
+	static final int RETRY_LIMIT = 10;
 
 	private final long localMemberId;
 	private final long peerMemberId;
@@ -70,6 +72,13 @@ public final class PartyMatchCoordinator
 	private boolean started;
 	private Long pendingRevision;
 	private String pendingHash;
+	private Map<String, Object> pendingActionPayload;
+	private final Map<Long, Map<String, Object>> appliedPeerActions = new LinkedHashMap<>();
+	private final Map<Long, String> acknowledgedLocalActions = new LinkedHashMap<>();
+	private Map<String, Object> lastAckPayload;
+	private int setupRetries;
+	private int actionRetries;
+	private int ackRetries;
 	private String userStatus = "Waiting to exchange seed commitments";
 
 	public PartyMatchCoordinator(long localMemberId, PartyDuelSnapshot duel, BattleCardCatalog catalog,
@@ -99,23 +108,8 @@ public final class PartyMatchCoordinator
 	{
 		if (started || status == PartyMatchSnapshot.Status.DESYNC
 			|| status == PartyMatchSnapshot.Status.ABORTED || status == PartyMatchSnapshot.Status.COMPLETE) return;
-		boolean enqueued;
-		try
-		{
-			enqueued = channel.send(BattlePartyMessageType.SNAPSHOT, seedCommitPayload());
-		}
-		catch (RuntimeException exception)
-		{
-			enqueued = false;
-		}
-		if (!enqueued)
-		{
-			status = PartyMatchSnapshot.Status.ABORTED;
-			userStatus = "Unable to start synchronized match";
-			publish();
-			return;
-		}
 		started = true;
+		sendSilently(BattlePartyMessageType.SNAPSHOT, seedCommitPayload());
 		userStatus = "Waiting for opponent seed commitment";
 		publish();
 	}
@@ -141,9 +135,56 @@ public final class PartyMatchCoordinator
 		revision = priorRevision + 1;
 		pendingRevision = revision;
 		pendingHash = nextState.getSynchronizationStateHash();
+		pendingActionPayload = payload;
+		actionRetries = 0;
+		lastAckPayload = null;
 		updateStatusFromEngine();
 		publish();
 		return result;
+	}
+
+	/** Advances deterministic retry timers by one caller-defined tick. */
+	public void onTick()
+	{
+		if (status == PartyMatchSnapshot.Status.DESYNC || status == PartyMatchSnapshot.Status.ABORTED) return;
+
+		if (pendingActionPayload != null)
+		{
+			if (actionRetries >= RETRY_LIMIT)
+			{
+				pendingRevision = null;
+				pendingHash = null;
+				pendingActionPayload = null;
+				timeout();
+				return;
+			}
+			sendSilently(BattlePartyMessageType.ACTION, pendingActionPayload);
+			actionRetries++;
+		}
+		else if (started && peerSetup == null)
+		{
+			if (setupRetries >= RETRY_LIMIT)
+			{
+				timeout();
+				return;
+			}
+			sendSilently(BattlePartyMessageType.SNAPSHOT, seedCommitPayload());
+			if (peerSeedCommitment != null)
+				sendSilently(BattlePartyMessageType.SNAPSHOT, setupPayload(localDeck, localContribution));
+			setupRetries++;
+		}
+		else if (started && setupRetries < RETRY_LIMIT)
+		{
+			sendSilently(BattlePartyMessageType.SNAPSHOT, seedCommitPayload());
+			sendSilently(BattlePartyMessageType.SNAPSHOT, setupPayload(localDeck, localContribution));
+			setupRetries++;
+		}
+
+		if (lastAckPayload != null && ackRetries < RETRY_LIMIT)
+		{
+			sendSilently(BattlePartyMessageType.ACTION_ACK, lastAckPayload);
+			ackRetries++;
+		}
 	}
 
 	public void receive(PartyApplicationMessage message)
@@ -254,30 +295,19 @@ public final class PartyMatchCoordinator
 		{
 			if (!peerSeedCommitment.equals(commitment))
 				throw new IllegalArgumentException("conflicting seed commitment");
+			sendSilently(BattlePartyMessageType.SNAPSHOT, setupPayload(localDeck, localContribution));
 			return;
 		}
 		peerSeedCommitment = commitment;
-		boolean enqueued;
-		try
-		{
-			enqueued = channel.send(BattlePartyMessageType.SNAPSHOT, setupPayload(localDeck, localContribution));
-		}
-		catch (RuntimeException exception)
-		{
-			enqueued = false;
-		}
-		if (!enqueued)
-		{
-			fail(true, "Unable to start synchronized match");
-			return;
-		}
+		setupRetries = 0;
+		sendSilently(BattlePartyMessageType.SNAPSHOT, setupPayload(localDeck, localContribution));
 		userStatus = "Waiting for opponent setup reveal";
 		publish();
 	}
 
 	private void receiveSetup(Map<String, Object> payload)
 	{
-		if (peerSeedCommitment == null) throw new IllegalArgumentException("setup preceded seed commitment");
+		if (peerSeedCommitment == null) return;
 		Setup setup = parseSetup(payload);
 		if (!peerSeedCommitment.equals(seedCommitment(peerMemberId, setup.contribution)))
 			throw new IllegalArgumentException("seed reveal does not match commitment");
@@ -300,6 +330,7 @@ public final class PartyMatchCoordinator
 		state = localSeat == PlayerId.PLAYER_ONE ? engine.newMatchWithMulligan(localCards, peerCards, seed)
 			: engine.newMatchWithMulligan(peerCards, localCards, seed);
 		peerSetup = setup;
+		setupRetries = 0;
 		status = PartyMatchSnapshot.Status.ACTIVE;
 		userStatus = "Match active";
 		publish();
@@ -307,12 +338,18 @@ public final class PartyMatchCoordinator
 
 	private void receiveAction(Map<String, Object> payload)
 	{
-		if (status != PartyMatchSnapshot.Status.ACTIVE) throw new IllegalArgumentException("match is not active");
 		requirePresent(payload, "actor", "command", "priorHash", "priorRevision", "resultingHash");
 		long wireRevision = integer(payload.get("priorRevision"), 0, MAX_WIRE_INTEGER, "priorRevision");
 		String priorHash = hash(payload.get("priorHash"), "priorHash");
 		String resultingHash = hash(payload.get("resultingHash"), "resultingHash");
 		String actor = string(payload.get("actor"), 1, 32, "actor");
+		Map<String, Object> applied = appliedPeerActions.get(wireRevision);
+		if (applied != null && applied.equals(payload))
+		{
+			sendAck(wireRevision + 1, resultingHash);
+			return;
+		}
+		if (status != PartyMatchSnapshot.Status.ACTIVE) throw new IllegalArgumentException("match is not active");
 		if (!peerSeat.name().equals(actor) || wireRevision != revision
 			|| !state.getSynchronizationStateHash().equals(priorHash))
 		{
@@ -329,14 +366,10 @@ public final class PartyMatchCoordinator
 		}
 		MatchState nextState = result.getState();
 		long nextRevision = revision + 1;
-		if (!channel.send(BattlePartyMessageType.ACTION_ACK, ackPayload(nextRevision,
-			nextState.getSynchronizationStateHash())))
-		{
-			fail(false, "Match synchronization failed");
-			return;
-		}
 		state = nextState;
 		revision = nextRevision;
+		appliedPeerActions.put(wireRevision, immutableCopy(payload));
+		sendAck(nextRevision, nextState.getSynchronizationStateHash());
 		updateStatusFromEngine();
 		publish();
 	}
@@ -348,17 +381,26 @@ public final class PartyMatchCoordinator
 		requireKeys(payload, "hash", "revision");
 		long acknowledged = integer(payload.get("revision"), 0, MAX_WIRE_INTEGER, "revision");
 		String acknowledgedHash = hash(payload.get("hash"), "hash");
-		if (pendingRevision == null || acknowledged != pendingRevision || !pendingHash.equals(acknowledgedHash))
+		if (pendingRevision == null)
+		{
+			if (acknowledgedHash.equals(acknowledgedLocalActions.get(acknowledged))) return;
+			fail(false, "Match synchronization failed");
+			return;
+		}
+		if (acknowledged != pendingRevision || !pendingHash.equals(acknowledgedHash))
 		{
 			fail(false, "Match synchronization failed");
 			return;
 		}
+		acknowledgedLocalActions.put(acknowledged, acknowledgedHash);
 		pendingRevision = null;
 		pendingHash = null;
+		pendingActionPayload = null;
 	}
 
 	private void receiveTransportConcede(Map<String, Object> payload)
 	{
+		if (status == PartyMatchSnapshot.Status.COMPLETE && payload.isEmpty()) return;
 		if (status != PartyMatchSnapshot.Status.ACTIVE || !payload.isEmpty())
 			throw new IllegalArgumentException("invalid transport concede");
 		CommandResult result = engine.execute(state, new ConcedeCommand(peerSeat));
@@ -456,6 +498,13 @@ public final class PartyMatchCoordinator
 		return Collections.unmodifiableMap(payload);
 	}
 
+	private void sendAck(long acknowledgedRevision, String acknowledgedHash)
+	{
+		lastAckPayload = ackPayload(acknowledgedRevision, acknowledgedHash);
+		ackRetries = 0;
+		sendSilently(BattlePartyMessageType.ACTION_ACK, lastAckPayload);
+	}
+
 	private Map<String, Object> setupPayload(Deck deck, long contribution)
 	{
 		List<Map<String, Object>> cards = new ArrayList<>();
@@ -528,10 +577,36 @@ public final class PartyMatchCoordinator
 
 	private void fail(boolean setupFailure, String safeStatus)
 	{
-		if (status == PartyMatchSnapshot.Status.DESYNC || status == PartyMatchSnapshot.Status.ABORTED) return;
+		if (status == PartyMatchSnapshot.Status.COMPLETE || status == PartyMatchSnapshot.Status.DESYNC
+			|| status == PartyMatchSnapshot.Status.ABORTED) return;
 		status = setupFailure ? PartyMatchSnapshot.Status.ABORTED : PartyMatchSnapshot.Status.DESYNC;
 		userStatus = safeStatus;
 		publish();
+	}
+
+	private void timeout()
+	{
+		if (status == PartyMatchSnapshot.Status.COMPLETE) return;
+		status = PartyMatchSnapshot.Status.ABORTED;
+		userStatus = "Match synchronization timed out";
+		publish();
+	}
+
+	private boolean sendSilently(BattlePartyMessageType type, Map<String, ?> payload)
+	{
+		try
+		{
+			return channel.send(type, payload);
+		}
+		catch (RuntimeException exception)
+		{
+			return false;
+		}
+	}
+
+	private static Map<String, Object> immutableCopy(Map<String, Object> payload)
+	{
+		return Collections.unmodifiableMap(new LinkedHashMap<>(payload));
 	}
 
 	private void publish()

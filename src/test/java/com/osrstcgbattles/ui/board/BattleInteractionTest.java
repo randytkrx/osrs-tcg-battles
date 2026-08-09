@@ -4,6 +4,7 @@ import com.osrstcgbattles.engine.AttackCommand;
 import com.osrstcgbattles.engine.Card;
 import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.CommandResult;
+import com.osrstcgbattles.engine.DeployEffect;
 import com.osrstcgbattles.engine.EndTurnCommand;
 import com.osrstcgbattles.engine.GwentEngine;
 import com.osrstcgbattles.engine.MatchState;
@@ -11,9 +12,11 @@ import com.osrstcgbattles.engine.PlayCardCommand;
 import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.UnitCard;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -97,6 +100,22 @@ public class BattleInteractionTest
 		assertFalse(interaction.selectHandCard("expensive"));
 	}
 
+	@Test
+	public void targetedCardDescribesTheRequiredTargetAndEffect()
+	{
+		List<Card> targeted = targetedDeck("damage");
+		MatchState state = engine.newMatch(targeted, deck("p2"), 5L);
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
+		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_TWO, "p2"));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
+		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
+		interaction.update(state);
+
+		assertTrue(interaction.selectHandCard("damage"));
+		assertTrue(interaction.isTargetPending());
+		assertEquals("Select an enemy unit for 3 damage", interaction.targetPrompt().get());
+	}
+
 	private MatchState newMatch()
 	{
 		return engine.newMatch(deck("p1"), deck("p2"), 7L);
@@ -120,6 +139,17 @@ public class BattleInteractionTest
 		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
 		{
 			cards.add(new UnitCard(id, id, manaCost, 3, 2));
+		}
+		return cards;
+	}
+
+	private static List<Card> targetedDeck(String id)
+	{
+		List<Card> cards = new ArrayList<>();
+		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		{
+			cards.add(new UnitCard(id, id, 0, 2, 2, Collections.singletonList(
+				new DeployEffect(DeployEffect.Type.DAMAGE, DeployEffect.Target.ENEMY_UNIT, 3))));
 		}
 		return cards;
 	}

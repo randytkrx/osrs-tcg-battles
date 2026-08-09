@@ -1,5 +1,5 @@
 # Card art sources for OSRS TCG Battles.
-# Derived from OSRS TCG's Card.json (BSD 2-Clause, Azderi) via the TCG Locked catalogs.
+# Derived from OSRS TCG resources bundled with this workspace.
 # Format: azCardName <TAB> ITEM|NPC <TAB> wikiUrlOrEmpty
 # Not part of the hashed battle catalog: art is cosmetic and must not affect duel compatibility.
 Chicken	NPC	https://oldschool.runescape.wiki/images/thumb/Chicken_%281%29.png/130px-Chicken_%281%29.png
@@ -18,10 +18,10 @@ King Black Dragon	NPC	https://oldschool.runescape.wiki/images/thumb/King_Black_D
 TzTok-Jad	NPC	https://oldschool.runescape.wiki/images/thumb/TzTok-Jad.png/130px-TzTok-Jad.png
 Vorkath	NPC	https://oldschool.runescape.wiki/images/thumb/Vorkath.png/130px-Vorkath.png
 Zulrah	NPC	https://oldschool.runescape.wiki/images/thumb/Zulrah_%28serpentine%29.png/130px-Zulrah_%28serpentine%29.png
-Abyssal whip	ITEM	
-Dragon scimitar	ITEM	
-Shark	ITEM	
-Saradomin brew	ITEM	
+Abyssal whip	ITEM
+Dragon scimitar	ITEM
+Shark	ITEM
+Saradomin brew	ITEM
 Guard	NPC	https://oldschool.runescape.wiki/images/thumb/Guard_%28Edgeville%2C_1%29.png/130px-Guard_%28Edgeville%2C_1%29.png
 Man	NPC	https://oldschool.runescape.wiki/images/thumb/Man_%28blue%29.png/130px-Man_%28blue%29.png
 Woman	NPC	https://oldschool.runescape.wiki/images/thumb/Woman.png/130px-Woman.png
@@ -38,7 +38,367 @@ Black bear	NPC	https://oldschool.runescape.wiki/images/thumb/Black_bear.png/130p
 Scorpion	NPC	https://oldschool.runescape.wiki/images/thumb/Scorpion_%28Sailing%29.png/130px-Scorpion_%28Sailing%29.png
 Skeleton	NPC	https://oldschool.runescape.wiki/images/thumb/Skeleton_%28level_21%2C_1%29.png/130px-Skeleton_%28level_21%2C_1%29.png
 Zombie	NPC	https://oldschool.runescape.wiki/images/thumb/Zombie_%28Level_13%29.png/130px-Zombie_%28Level_13%29.png
-Lobster	ITEM	
-Swordfish	ITEM	
-Strength potion	ITEM	
-Bronze sword	ITEM	
+Lobster	ITEM
+Swordfish	ITEM
+Strength potion	ITEM
+Bronze sword	ITEM
+Lightbearer	ITEM
+Prayer potion	ITEM
+Super restore	ITEM
+Nex	NPC	https://osrs-tcg.net/images/npcs/detail/Nex.png
+Molanisk	NPC	https://osrs-tcg.net/images/npcs/detail/Molanisk.png
+Death spawn	NPC	https://osrs-tcg.net/images/npcs/detail/Death_spawn.png
+White wolf	NPC	https://osrs-tcg.net/images/npcs/detail/White_wolf.png
+Guard dog	NPC	https://osrs-tcg.net/images/npcs/detail/Guard_dog.png
+Baby red dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Baby_red_dragon_(1).png
+Tok-Xil	NPC	https://osrs-tcg.net/images/npcs/detail/Tok-Xil_(1).png
+Baby blue dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Baby_blue_dragon_(1).png
+Ghoul	NPC	https://osrs-tcg.net/images/npcs/detail/Ghoul.png
+Gunthor the brave	NPC	https://osrs-tcg.net/images/npcs/detail/Gunthor_the_brave.png
+Donny the lad	NPC	https://osrs-tcg.net/images/npcs/detail/Donny_the_lad.png
+Corporeal Beast	NPC	https://osrs-tcg.net/images/npcs/detail/Corporeal_Beast.png
+Vannaka	NPC	https://osrs-tcg.net/images/npcs/detail/Vannaka.png
+Kurask	NPC	https://osrs-tcg.net/images/npcs/detail/Kurask.png
+Abyssal demon	NPC	https://osrs-tcg.net/images/npcs/detail/Abyssal_demon.png
+Rockslug	NPC	https://osrs-tcg.net/images/npcs/detail/Rockslug.png
+Infernal Mage	NPC	https://osrs-tcg.net/images/npcs/detail/Infernal_Mage.png
+Harpie Bug Swarm	NPC	https://osrs-tcg.net/images/npcs/detail/Harpie_Bug_Swarm.png
+Wall beast	NPC	https://osrs-tcg.net/images/npcs/detail/Wall_beast.png
+Cave slime	NPC	https://osrs-tcg.net/images/npcs/detail/Cave_slime.png
+Kraken	NPC	https://osrs-tcg.net/images/npcs/detail/Kraken.png
+Death wing	NPC	https://osrs-tcg.net/images/npcs/detail/Death_wing.png
+Black Knight	NPC	https://osrs-tcg.net/images/npcs/detail/Black_Knight_(male).png
+Thug	NPC	https://osrs-tcg.net/images/npcs/detail/Thug.png
+Chaos druid warrior	NPC	https://osrs-tcg.net/images/npcs/detail/Chaos_druid_warrior.png
+Zombie swab	NPC	https://osrs-tcg.net/images/npcs/detail/Zombie_swab_(1).png
+Tyras guard	NPC	https://osrs-tcg.net/images/npcs/detail/Tyras_guard.png
+Stranger	NPC	https://osrs-tcg.net/images/npcs/detail/Stranger.png
+Baby Roc	NPC	https://osrs-tcg.net/images/npcs/detail/Baby_Roc.png
+Melzar the Mad	NPC	https://osrs-tcg.net/images/npcs/detail/Melzar_the_Mad.png
+Skogre	NPC	https://osrs-tcg.net/images/npcs/detail/Skogre_(1).png
+Pee Hat	NPC	https://osrs-tcg.net/images/npcs/detail/Pee_Hat.png
+Kalphite Guardian	NPC	https://osrs-tcg.net/images/npcs/detail/Kalphite_Guardian.png
+Guard Bandit	NPC	https://osrs-tcg.net/images/npcs/detail/Guard_Bandit.png
+Giant mosquito	NPC	https://osrs-tcg.net/images/npcs/detail/Giant_mosquito.png
+Mac	NPC	https://osrs-tcg.net/images/npcs/detail/Mac.png
+Sea Snake Hatchling	NPC	https://osrs-tcg.net/images/npcs/detail/Sea_Snake_Hatchling.png
+Barrelchest	NPC	https://osrs-tcg.net/images/npcs/detail/Barrelchest.png
+Kamil	NPC	https://osrs-tcg.net/images/npcs/detail/Kamil.png
+Ogre	NPC	https://osrs-tcg.net/images/npcs/detail/Ogre.png
+Clivet	NPC	https://osrs-tcg.net/images/npcs/detail/Clivet.png
+Khazard Ogre	NPC	https://osrs-tcg.net/images/npcs/detail/Khazard_Ogre.png
+Evil Creature	NPC	https://osrs-tcg.net/images/npcs/detail/Evil_Creature.png
+Experiment	NPC	https://osrs-tcg.net/images/npcs/detail/Experiment_(level_51).png
+Riyl Shade	NPC	https://osrs-tcg.net/images/npcs/detail/Riyl_Shade.png
+Afflicted	NPC	https://osrs-tcg.net/images/npcs/detail/Afflicted_(level_37).png
+Earth elemental	NPC	https://osrs-tcg.net/images/npcs/detail/Earth_elemental.png
+Camp dweller	NPC	https://osrs-tcg.net/images/npcs/detail/Camp_dweller_(level_25).png
+Skeleton hero	NPC	https://osrs-tcg.net/images/npcs/detail/Skeleton_hero.png
+Skeleton heavy	NPC	https://osrs-tcg.net/images/npcs/detail/Skeleton_heavy.png
+Water wizard	NPC	https://osrs-tcg.net/images/npcs/detail/Water_wizard.png
+Battle mage	NPC	https://osrs-tcg.net/images/npcs/detail/Battle_mage_(Zamorak).png
+Torag the Corrupted	NPC	https://osrs-tcg.net/images/npcs/detail/Torag_the_Corrupted.png
+Bloodworm	NPC	https://osrs-tcg.net/images/npcs/detail/Bloodworm.png
+Crypt spider	NPC	https://osrs-tcg.net/images/npcs/detail/Crypt_spider.png
+Ravager	NPC	https://osrs-tcg.net/images/npcs/detail/Ravager_(Level_106).png
+Brawler	NPC	https://osrs-tcg.net/images/npcs/detail/Brawler_(level_158).png
+Billy Goat	NPC	https://osrs-tcg.net/images/npcs/detail/Billy_Goat_(brown).png
+Stag	NPC	https://osrs-tcg.net/images/npcs/detail/Stag.png
+Ice troll male	NPC	https://osrs-tcg.net/images/npcs/detail/Ice_troll_male.png
+Duckling	NPC	https://osrs-tcg.net/images/npcs/detail/Duckling.png
+Chaos Elemental	NPC	https://osrs-tcg.net/images/npcs/detail/Chaos_Elemental.png
+Terrorbird	NPC	https://osrs-tcg.net/images/npcs/detail/Terrorbird.png
+Cyclops	NPC	https://osrs-tcg.net/images/npcs/detail/Cyclops_(level_56,_2).png
+TzHaar-Mej	NPC	https://osrs-tcg.net/images/npcs/detail/TzHaar-Mej.png
+Tz-Kih	NPC	https://osrs-tcg.net/images/npcs/detail/Tz-Kih.png
+Starlight	NPC	https://osrs-tcg.net/images/npcs/detail/Starlight.png
+Saradomin priest	NPC	https://osrs-tcg.net/images/npcs/detail/Saradomin_priest.png
+Sergeant Strongstack	NPC	https://osrs-tcg.net/images/npcs/detail/Sergeant_Strongstack.png
+Black Guard Berserker	NPC	https://osrs-tcg.net/images/npcs/detail/Black_Guard_Berserker_(green).png
+Giant Rock Crab	NPC	https://osrs-tcg.net/images/npcs/detail/Giant_Rock_Crab.png
+Animated Bronze Armour	NPC	https://osrs-tcg.net/images/npcs/detail/Animated_Bronze_Armour.png
+Animated Mithril Armour	NPC	https://osrs-tcg.net/images/npcs/detail/Animated_Mithril_Armour.png
+Catablepon	NPC	https://osrs-tcg.net/images/npcs/detail/Catablepon.png
+Flesh Crawler	NPC	https://osrs-tcg.net/images/npcs/detail/Flesh_Crawler.png
+H.A.M. Guard	NPC	https://osrs-tcg.net/images/npcs/detail/H.A.M._Guard_(level_22).png
+Mogre	NPC	https://osrs-tcg.net/images/npcs/detail/Mogre.png
+Yuri	NPC	https://osrs-tcg.net/images/npcs/detail/Yuri.png
+Eduard	NPC	https://osrs-tcg.net/images/npcs/detail/Eduard.png
+Svetlana	NPC	https://osrs-tcg.net/images/npcs/detail/Svetlana.png
+Milla	NPC	https://osrs-tcg.net/images/npcs/detail/Milla.png
+Ksenia	NPC	https://osrs-tcg.net/images/npcs/detail/Ksenia.png
+Vera	NPC	https://osrs-tcg.net/images/npcs/detail/Vera.png
+Blood Blamish Snail	NPC	https://osrs-tcg.net/images/npcs/detail/Blood_Blamish_Snail_(round).png
+Ochre Blamish Snail	NPC	https://osrs-tcg.net/images/npcs/detail/Ochre_Blamish_Snail_(pointed).png
+Giant bat	NPC	https://osrs-tcg.net/images/npcs/detail/Giant_bat.png
+Earth warrior	NPC	https://osrs-tcg.net/images/npcs/detail/Earth_warrior.png
+Magic axe	NPC	https://osrs-tcg.net/images/npcs/detail/Magic_axe.png
+Dungeon rat	NPC	https://osrs-tcg.net/images/npcs/detail/Dungeon_rat.png
+Mithril dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Mithril_dragon.png
+Nail beast	NPC	https://osrs-tcg.net/images/npcs/detail/Nail_beast.png
+Big Snake	NPC	https://osrs-tcg.net/images/npcs/detail/Big_Snake.png
+Tortured soul	NPC	https://osrs-tcg.net/images/npcs/detail/Tortured_soul.png
+Deadly red spider	NPC	https://osrs-tcg.net/images/npcs/detail/Deadly_red_spider.png
+Poison Scorpion	NPC	https://osrs-tcg.net/images/npcs/detail/Poison_Scorpion.png
+Barbarian	NPC	https://osrs-tcg.net/images/npcs/detail/Barbarian_(Alberich).png
+Ket-Zek	NPC	https://osrs-tcg.net/images/npcs/detail/Ket-Zek_(1).png
+Zakl'n Gritch	NPC	https://osrs-tcg.net/images/npcs/detail/Zakl'n_Gritch.png
+Werewolf	NPC	https://osrs-tcg.net/images/npcs/detail/Werewolf_(Boris).png
+Icefiend	NPC	https://osrs-tcg.net/images/npcs/detail/Icefiend.png
+Wingman Skree	NPC	https://osrs-tcg.net/images/npcs/detail/Wingman_Skree.png
+Aviansie	NPC	https://osrs-tcg.net/images/npcs/detail/Aviansie_(level_148).png
+Druid	NPC	https://osrs-tcg.net/images/npcs/detail/Druid.png
+Gardener	NPC	https://osrs-tcg.net/images/npcs/detail/Gardener.png
+Rusty	NPC	https://osrs-tcg.net/images/npcs/detail/Rusty.png
+Anja	NPC	https://osrs-tcg.net/images/npcs/detail/Anja.png
+Earth Warrior Champion	NPC	https://osrs-tcg.net/images/npcs/detail/Earth_Warrior_Champion.png
+Ghoul Champion	NPC	https://osrs-tcg.net/images/npcs/detail/Ghoul_Champion.png
+Imp Champion	NPC	https://osrs-tcg.net/images/npcs/detail/Imp_Champion.png
+Skeleton Champion	NPC	https://osrs-tcg.net/images/npcs/detail/Skeleton_Champion.png
+Grizzly bear cub	NPC	https://osrs-tcg.net/images/npcs/detail/Grizzly_bear_cub_(level_36).png
+Lucien	NPC	https://osrs-tcg.net/images/npcs/detail/Lucien_(disguised).png
+Shadow Hound	NPC	https://osrs-tcg.net/images/npcs/detail/Shadow_Hound.png
+Renegade knight	NPC	https://osrs-tcg.net/images/npcs/detail/Renegade_knight.png
+Menaphite Thug	NPC	https://osrs-tcg.net/images/npcs/detail/Menaphite_Thug.png
+Unicow	NPC	https://osrs-tcg.net/images/npcs/detail/Unicow.png
+Jubster	NPC	https://osrs-tcg.net/images/npcs/detail/Jubster.png
+Skeletal miner	NPC	https://osrs-tcg.net/images/npcs/detail/Skeletal_miner.png
+Thorhild	NPC	https://osrs-tcg.net/images/npcs/detail/Thorhild.png
+Broddi	NPC	https://osrs-tcg.net/images/npcs/detail/Broddi.png
+Vyrewatch	NPC	https://osrs-tcg.net/images/npcs/detail/Vyrewatch.png
+Wilson	NPC	https://osrs-tcg.net/images/npcs/detail/Wilson.png
+Bunny	NPC	https://osrs-tcg.net/images/npcs/detail/Bunny_(1).png
+Black unicorn Foal	NPC	https://osrs-tcg.net/images/npcs/detail/Black_unicorn_Foal.png
+Borrokar	NPC	https://osrs-tcg.net/images/npcs/detail/Borrokar.png
+Jennella	NPC	https://osrs-tcg.net/images/npcs/detail/Jennella.png
+Tormented Warrior	NPC	https://osrs-tcg.net/images/npcs/detail/Tormented_Warrior.png
+Irvig Senay	NPC	https://osrs-tcg.net/images/npcs/detail/Irvig_Senay.png
+Witch's experiment	NPC	https://osrs-tcg.net/images/npcs/detail/Witch's_experiment_(second_form).png
+Eadburg	NPC	https://osrs-tcg.net/images/npcs/detail/Eadburg.png
+Penda	NPC	https://osrs-tcg.net/images/npcs/detail/Penda.png
+Fareed	NPC	https://osrs-tcg.net/images/npcs/detail/Fareed.png
+Twig	NPC	https://osrs-tcg.net/images/npcs/detail/Twig.png
+Mountain troll	NPC	https://osrs-tcg.net/images/npcs/detail/Mountain_troll.png
+Apparition	NPC	https://osrs-tcg.net/images/npcs/detail/Het_(monster).png
+Jail guard	NPC	https://osrs-tcg.net/images/npcs/detail/Jail_guard_(1).png
+Skeleton Mage	NPC	https://osrs-tcg.net/images/npcs/detail/Skeleton_Mage_(lv_83).png
+Sir Lancelot	NPC	https://osrs-tcg.net/images/npcs/detail/Sir_Lancelot.png
+Sir Gawain	NPC	https://osrs-tcg.net/images/npcs/detail/Sir_Gawain.png
+Gorad	NPC	https://osrs-tcg.net/images/npcs/detail/Gorad.png
+Ogre shaman	NPC	https://osrs-tcg.net/images/npcs/detail/Ogre_shaman_(Swan_Song).png
+Cow31337Killer	NPC	https://osrs-tcg.net/images/npcs/detail/Cow31337Killer.png
+Ulfric	NPC	https://osrs-tcg.net/images/npcs/detail/Ulfric.png
+Blessed giant rat	NPC	https://osrs-tcg.net/images/npcs/detail/Blessed_giant_rat_(1).png
+Shantay Guard	NPC	https://osrs-tcg.net/images/npcs/detail/Shantay_Guard.png
+Bedabin Nomad Fighter	NPC	https://osrs-tcg.net/images/npcs/detail/Bedabin_Nomad_Fighter.png
+Sir Tiffy Cashien	NPC	https://osrs-tcg.net/images/npcs/detail/Sir_Tiffy_Cashien_(bench).png
+Angry goblin	NPC	https://osrs-tcg.net/images/npcs/detail/Angry_goblin.png
+Confusion beast	NPC	https://osrs-tcg.net/images/npcs/detail/Confusion_beast.png
+Black golem	NPC	https://osrs-tcg.net/images/npcs/detail/Black_golem.png
+Poltenip	NPC	https://osrs-tcg.net/images/npcs/detail/Poltenip.png
+Slug Prince	NPC	https://osrs-tcg.net/images/npcs/detail/Slug_Prince.png
+Jubbly bird	NPC	https://osrs-tcg.net/images/npcs/detail/Jubbly_bird.png
+Pirate Guard	NPC	https://osrs-tcg.net/images/npcs/detail/Pirate_Guard.png
+Khazard commander	NPC	https://osrs-tcg.net/images/npcs/detail/Khazard_commander.png
+Experiment No.2	NPC	https://osrs-tcg.net/images/npcs/detail/Experiment_No.2.png
+H.A.M. Archer	NPC	https://osrs-tcg.net/images/npcs/detail/H.A.M._Archer.png
+Jonny the Beard	NPC	https://osrs-tcg.net/images/npcs/detail/Jonny_the_Beard.png
+Oipuis	NPC	https://osrs-tcg.net/images/npcs/detail/Oipuis.png
+Uodai	NPC	https://osrs-tcg.net/images/npcs/detail/Uodai.png
+Monkey Guard	NPC	https://osrs-tcg.net/images/npcs/detail/Monkey_Guard.png
+Elf Archer	NPC	https://osrs-tcg.net/images/npcs/detail/Elf_Archer_(1).png
+Undead one	NPC	https://osrs-tcg.net/images/npcs/detail/Undead_one_(Zombie,_4).png
+Watchman	NPC	https://osrs-tcg.net/images/npcs/detail/Watchman_(Yanille).png
+Enraged barbarian spirit	NPC	https://osrs-tcg.net/images/npcs/detail/Enraged_barbarian_spirit.png
+Swamp snake	NPC	https://osrs-tcg.net/images/npcs/detail/Swamp_snake_(Level_139).png
+Feral Vampyre	NPC	https://osrs-tcg.net/images/npcs/detail/Feral_Vampyre_(Temple_Trekking).png
+Penance Ranger	NPC	https://osrs-tcg.net/images/npcs/detail/Penance_Ranger_(wave_9).png
+Giant Mole	NPC	https://osrs-tcg.net/images/npcs/detail/Giant_Mole.png
+Frenzied ice troll male	NPC	https://osrs-tcg.net/images/npcs/detail/Frenzied_ice_troll_male.png
+Baby tanglefoot	NPC	https://osrs-tcg.net/images/npcs/detail/Baby_tanglefoot_(1).png
+Sand Crab	NPC	https://osrs-tcg.net/images/npcs/detail/Sand_Crab.png
+Spinolyp	NPC	https://osrs-tcg.net/images/npcs/detail/Spinolyp.png
+Justiciar Zachariah	NPC	https://osrs-tcg.net/images/npcs/detail/Justiciar_Zachariah.png
+Tortoise	NPC	https://osrs-tcg.net/images/npcs/detail/Tortoise_with_riders.png
+Gnome woman	NPC	https://osrs-tcg.net/images/npcs/detail/Gnome_woman.png
+Gnome Mage	NPC	https://osrs-tcg.net/images/npcs/detail/Gnome_Mage.png
+The Inadequacy	NPC	https://osrs-tcg.net/images/npcs/detail/The_Inadequacy.png
+Urium Shade	NPC	https://osrs-tcg.net/images/npcs/detail/Urium_Shade.png
+Chronozon	NPC	https://osrs-tcg.net/images/npcs/detail/Chronozon.png
+Black demon	NPC	https://osrs-tcg.net/images/npcs/detail/Black_demon.png
+Black Knight Titan	NPC	https://osrs-tcg.net/images/npcs/detail/Black_Knight_Titan.png
+Culinaromancer	NPC	https://osrs-tcg.net/images/npcs/detail/Culinaromancer.png
+Karamel	NPC	https://osrs-tcg.net/images/npcs/detail/Karamel.png
+Nezikchened	NPC	https://osrs-tcg.net/images/npcs/detail/Nezikchened.png
+Jungle Demon	NPC	https://osrs-tcg.net/images/npcs/detail/Jungle_Demon.png
+Slagilith	NPC	https://osrs-tcg.net/images/npcs/detail/Slagilith.png
+Agrith Naar	NPC	https://osrs-tcg.net/images/npcs/detail/Agrith_Naar.png
+Dad	NPC	https://osrs-tcg.net/images/npcs/detail/Dad.png
+Nazastarool	NPC	https://osrs-tcg.net/images/npcs/detail/Nazastarool_(Ghost).png
+Broodoo victim	NPC	https://osrs-tcg.net/images/npcs/detail/Broodoo_victim_(green).png
+Terror dog	NPC	https://osrs-tcg.net/images/npcs/detail/Terror_dog_(level_110).png
+Venenatis	NPC	https://osrs-tcg.net/images/npcs/detail/Venenatis_(PvM_Arena).png
+Ent	NPC	https://osrs-tcg.net/images/npcs/detail/Ent_(lv_101).png
+Mammoth	NPC	https://osrs-tcg.net/images/npcs/detail/Mammoth.png
+Elder Chaos druid	NPC	https://osrs-tcg.net/images/npcs/detail/Elder_Chaos_druid.png
+Scorpia's offspring	NPC	https://osrs-tcg.net/images/npcs/detail/Scorpia's_offspring_(monster).png
+Chaos Fanatic	NPC	https://osrs-tcg.net/images/npcs/detail/Chaos_Fanatic.png
+River troll	NPC	https://osrs-tcg.net/images/npcs/detail/River_troll.png
+Pyrelord	NPC	https://osrs-tcg.net/images/npcs/detail/Pyrelord.png
+Steve	NPC	https://osrs-tcg.net/images/npcs/detail/Steve_(Slayer_master).png
+Gang boss	NPC	https://osrs-tcg.net/images/npcs/detail/Gang_boss_(female).png
+Tortured gorilla	NPC	https://osrs-tcg.net/images/npcs/detail/Tortured_gorilla.png
+Kob	NPC	https://osrs-tcg.net/images/npcs/detail/Kob.png
+Greater demon	NPC	https://osrs-tcg.net/images/npcs/detail/Greater_demon_(5).png
+Dust devil	NPC	https://osrs-tcg.net/images/npcs/detail/Dust_devil.png
+Iron dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Iron_dragon.png
+Twisted Banshee	NPC	https://osrs-tcg.net/images/npcs/detail/Twisted_Banshee.png
+Brutal black dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Brutal_black_dragon.png
+Greater Nechryael	NPC	https://osrs-tcg.net/images/npcs/detail/Greater_Nechryael.png
+Reanimated demon spawn	NPC	https://osrs-tcg.net/images/npcs/detail/Reanimated_demon_spawn.png
+Brassican Mage	NPC	https://osrs-tcg.net/images/npcs/detail/Brassican_Mage.png
+Chasm Crawler	NPC	https://osrs-tcg.net/images/npcs/detail/Chasm_Crawler.png
+Giant rockslug	NPC	https://osrs-tcg.net/images/npcs/detail/Giant_rockslug.png
+Insatiable Bloodveld	NPC	https://osrs-tcg.net/images/npcs/detail/Insatiable_Bloodveld.png
+Abhorrent spectre	NPC	https://osrs-tcg.net/images/npcs/detail/Abhorrent_spectre.png
+King kurask	NPC	https://osrs-tcg.net/images/npcs/detail/King_kurask.png
+Night beast	NPC	https://osrs-tcg.net/images/npcs/detail/Night_beast.png
+Zamorak warrior	NPC	https://osrs-tcg.net/images/npcs/detail/Zamorak_warrior_(level_85).png
+Cave lizard	NPC	https://osrs-tcg.net/images/npcs/detail/Cave_lizard.png
+Porazdir	NPC	https://osrs-tcg.net/images/npcs/detail/Porazdir.png
+TzHaar-Ket	NPC	https://osrs-tcg.net/images/npcs/detail/TzHaar-Ket_(level_221).png
+Jal-Ak	NPC	https://osrs-tcg.net/images/npcs/detail/Jal-Ak.png
+Jal-AkRek-Ket	NPC	https://osrs-tcg.net/images/npcs/detail/Jal-AkRek-Ket.png
+Jal-Zek	NPC	https://osrs-tcg.net/images/npcs/detail/Jal-Zek.png
+TzKal-Zuk	NPC	https://osrs-tcg.net/images/npcs/detail/TzKal-Zuk.png
+Taloned Wyvern	NPC	https://osrs-tcg.net/images/npcs/detail/Taloned_Wyvern.png
+Lobstrosity	NPC	https://osrs-tcg.net/images/npcs/detail/Lobstrosity.png
+Tar Monster	NPC	https://osrs-tcg.net/images/npcs/detail/Tar_Monster.png
+Black dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Black_dragon_(3).png
+Hellhound	NPC	https://osrs-tcg.net/images/npcs/detail/Hellhound.png
+Dusk	NPC	https://osrs-tcg.net/images/npcs/detail/Dusk_(2nd_form).png
+Revenant goblin	NPC	https://osrs-tcg.net/images/npcs/detail/Revenant_goblin.png
+Revenant cyclops	NPC	https://osrs-tcg.net/images/npcs/detail/Revenant_cyclops.png
+Revenant ork	NPC	https://osrs-tcg.net/images/npcs/detail/Revenant_ork.png
+Revenant dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Revenant_dragon.png
+Ogress Warrior	NPC	https://osrs-tcg.net/images/npcs/detail/Ogress_Warrior_(1).png
+Rune dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Rune_dragon_(Construction)_built.png
+Robert the Strong	NPC	https://osrs-tcg.net/images/npcs/detail/Robert_the_Strong.png
+Stone Guardian	NPC	https://osrs-tcg.net/images/npcs/detail/Stone_Guardian_(melee).png
+Growthling	NPC	https://osrs-tcg.net/images/npcs/detail/Growthling.png
+Abomination	NPC	https://osrs-tcg.net/images/npcs/detail/Abomination.png
+Nylocas Toxobolos	NPC	https://osrs-tcg.net/images/npcs/detail/Nylocas_Toxobolos.png
+Blood spawn	NPC	https://osrs-tcg.net/images/npcs/detail/Blood_spawn.png
+Mother	NPC	https://osrs-tcg.net/images/npcs/detail/Mother.png
+Trapped Soul	NPC	https://osrs-tcg.net/images/npcs/detail/Trapped_Soul.png
+Wyrm	NPC	https://osrs-tcg.net/images/npcs/detail/Wyrm.png
+Konar quo Maten	NPC	https://osrs-tcg.net/images/npcs/detail/Konar_quo_Maten.png
+Third Age Mage	NPC	https://osrs-tcg.net/images/npcs/detail/Third_Age_Mage.png
+Shaeded Beast	NPC	https://osrs-tcg.net/images/npcs/detail/Shaeded_Beast.png
+Moss Giant	NPC	https://osrs-tcg.net/images/npcs/detail/Moss_Giant_(Iorwerth_Dungeon).png
+Fragment of Seren	NPC	https://osrs-tcg.net/images/npcs/detail/Fragment_of_Seren.png
+Sir Harry	NPC	https://osrs-tcg.net/images/npcs/detail/Sir_Harry.png
+Doomion	NPC	https://osrs-tcg.net/images/npcs/detail/Doomion.png
+Mourner	NPC	https://osrs-tcg.net/images/npcs/detail/Mourner_(level_108).png
+Crystalline Spider	NPC	https://osrs-tcg.net/images/npcs/detail/Crystalline_Spider.png
+Crystalline Scorpion	NPC	https://osrs-tcg.net/images/npcs/detail/Crystalline_Scorpion.png
+Crystalline Dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Crystalline_Dragon.png
+Corrupted Rat	NPC	https://osrs-tcg.net/images/npcs/detail/Corrupted_Rat.png
+Corrupted Unicorn	NPC	https://osrs-tcg.net/images/npcs/detail/Corrupted_Unicorn.png
+Corrupted Bear	NPC	https://osrs-tcg.net/images/npcs/detail/Corrupted_Bear.png
+Zalcano	NPC	https://osrs-tcg.net/images/npcs/detail/Zalcano.png
+Essyllt	NPC	https://osrs-tcg.net/images/npcs/detail/Essyllt_(Song_of_the_Elves).png
+The Jormungand	NPC	https://osrs-tcg.net/images/npcs/detail/The_Jormungand.png
+Phosani's Nightmare	NPC	https://osrs-tcg.net/images/npcs/detail/The_Nightmare.png
+Husk	NPC	https://osrs-tcg.net/images/npcs/detail/Husk_(magic).png
+Damien Leucurte	NPC	https://osrs-tcg.net/images/npcs/detail/Damien_Leucurte.png
+Vyrewatch Sentinel	NPC	https://osrs-tcg.net/images/npcs/detail/Vyrewatch_Sentinel_(1).png
+Guardian Drake	NPC	https://osrs-tcg.net/images/npcs/detail/Guardian_Drake.png
+Sourhog	NPC	https://osrs-tcg.net/images/npcs/detail/Sourhog.png
+Forgotten Soul	NPC	https://osrs-tcg.net/images/npcs/detail/Forgotten_Soul.png
+Undead Zealot	NPC	https://osrs-tcg.net/images/npcs/detail/Undead_Zealot.png
+Mind Golem	NPC	https://osrs-tcg.net/images/npcs/detail/Mind_Golem.png
+Nylocas Prinkipas	NPC	https://osrs-tcg.net/images/npcs/detail/Nylocas_Prinkipas_(melee).png
+Nylocas Matomenos	NPC	https://osrs-tcg.net/images/npcs/detail/Nylocas_Matomenos.png
+Phantom Hand	NPC	https://osrs-tcg.net/images/npcs/detail/Phantom_Hand_(1).png
+Boar	NPC	https://osrs-tcg.net/images/npcs/detail/Boar_(lv_7).png
+Necromancer	NPC	https://osrs-tcg.net/images/npcs/detail/Necromancer_(Great_Kourend).png
+Hespori	NPC	https://osrs-tcg.net/images/npcs/detail/Hespori_(A_Night_at_the_Theatre).png
+Skoblin	NPC	https://osrs-tcg.net/images/npcs/detail/Skoblin.png
+Mosschin	NPC	https://osrs-tcg.net/images/npcs/detail/Mosschin.png
+Fumus	NPC	https://osrs-tcg.net/images/npcs/detail/Fumus.png
+Cruor	NPC	https://osrs-tcg.net/images/npcs/detail/Cruor.png
+Spiritual Ranger	NPC	https://osrs-tcg.net/images/npcs/detail/Spiritual_Ranger_(Zaros).png
+Menaphite Shadow	NPC	https://osrs-tcg.net/images/npcs/detail/Menaphite_Shadow.png
+Menaphite Akh	NPC	https://osrs-tcg.net/images/npcs/detail/Menaphite_Akh.png
+Locust	NPC	https://osrs-tcg.net/images/npcs/detail/Locust.png
+Baboon Brawler	NPC	https://osrs-tcg.net/images/npcs/detail/Baboon_Brawler_(level-68).png
+Baboon Shaman	NPC	https://osrs-tcg.net/images/npcs/detail/Baboon_Shaman.png
+Baboon Thrall	NPC	https://osrs-tcg.net/images/npcs/detail/Baboon_Thrall.png
+Spitting Scarab	NPC	https://osrs-tcg.net/images/npcs/detail/Spitting_Scarab.png
+Zebak	NPC	https://osrs-tcg.net/images/npcs/detail/Zebak.png
+Baboon	NPC	https://osrs-tcg.net/images/npcs/detail/Baboon.png
+Tribeswoman	NPC	https://osrs-tcg.net/images/npcs/detail/Tribeswoman_(dark_brown).png
+Calvar'ion	NPC	https://osrs-tcg.net/images/npcs/detail/Calvar'ion.png
+Evelot	NPC	https://osrs-tcg.net/images/npcs/detail/Evelot.png
+Phantom Muspah	NPC	https://osrs-tcg.net/images/npcs/detail/Phantom_Muspah_(ranged).png
+The Leviathan	NPC	https://osrs-tcg.net/images/npcs/detail/The_Leviathan.png
+Ghost	NPC	https://osrs-tcg.net/images/npcs/detail/Ghost_(Lassar_Undercity).png
+Strangled Bear	NPC	https://osrs-tcg.net/images/npcs/detail/Strangled_Bear.png
+Mysterious Figure	NPC	https://osrs-tcg.net/images/npcs/detail/Mysterious_Figure.png
+Kasonde the Craven	NPC	https://osrs-tcg.net/images/npcs/detail/Kasonde_the_Craven.png
+Ancient Guardian	NPC	https://osrs-tcg.net/images/npcs/detail/Ancient_Guardian_(Desert_Treasure_II).png
+Radiant sanguisphera	NPC	https://osrs-tcg.net/images/npcs/detail/Radiant_sanguisphera.png
+Scarred hellhound	NPC	https://osrs-tcg.net/images/npcs/detail/Scarred_hellhound.png
+Abyssal leech	NPC	https://osrs-tcg.net/images/npcs/detail/Abyssal_leech_(The_Scar).png
+Dagannoth Supreme	NPC	https://osrs-tcg.net/images/npcs/detail/Dagannoth_Supreme_(Deadman_Apocalypse).png
+Greater abyssal demon	NPC	https://osrs-tcg.net/images/npcs/detail/Greater_abyssal_demon_(Deadman_Apocalypse).png
+Cave abomination	NPC	https://osrs-tcg.net/images/npcs/detail/Cave_abomination_(Deadman_Apocalypse).png
+Sulphur Lizard	NPC	https://osrs-tcg.net/images/npcs/detail/Sulphur_Lizard.png
+Warped Tortoise	NPC	https://osrs-tcg.net/images/npcs/detail/Warped_Tortoise.png
+Serpent shaman	NPC	https://osrs-tcg.net/images/npcs/detail/Serpent_shaman.png
+Fremennik warband seer	NPC	https://osrs-tcg.net/images/npcs/detail/Fremennik_warband_seer.png
+Manticore	NPC	https://osrs-tcg.net/images/npcs/detail/Manticore.png
+Passionate Supporter	NPC	https://osrs-tcg.net/images/npcs/detail/Passionate_Supporter.png
+Cultist	NPC	https://osrs-tcg.net/images/npcs/detail/Cultist.png
+Jaguar cub	NPC	https://osrs-tcg.net/images/npcs/detail/Jaguar_cub.png
+Oryx	NPC	https://osrs-tcg.net/images/npcs/detail/Oryx.png
+Blue Moon	NPC	https://osrs-tcg.net/images/npcs/detail/Blue_Moon.png
+Moonlight Cockatrice	NPC	https://osrs-tcg.net/images/npcs/detail/Moonlight_Cockatrice.png
+Elite Black Knight	NPC	https://osrs-tcg.net/images/npcs/detail/Elite_Black_Knight_(male).png
+Elite Dark Mage	NPC	https://osrs-tcg.net/images/npcs/detail/Elite_Dark_Mage_(male).png
+Strong Warrior	NPC	https://osrs-tcg.net/images/npcs/detail/Strong_Warrior.png
+Mercenary axeman	NPC	https://osrs-tcg.net/images/npcs/detail/Mercenary_axeman_(1).png
+Tormented Demon	NPC	https://osrs-tcg.net/images/npcs/detail/Tormented_Demon_(1).png
+Mazchna	NPC	https://osrs-tcg.net/images/npcs/detail/Mazchna.png
+Cerberus	NPC	https://osrs-tcg.net/images/npcs/detail/Cerberus_(Deadman).png
+Araxxor	NPC	https://osrs-tcg.net/images/npcs/detail/Araxxor_(enraged).png
+Ruptura Araxyte	NPC	https://osrs-tcg.net/images/npcs/detail/Ruptura_Araxyte.png
+Amoxliatl	NPC	https://osrs-tcg.net/images/npcs/detail/Amoxliatl.png
+Emissary Ascended	NPC	https://osrs-tcg.net/images/npcs/detail/Emissary_Ascended_(Monster,_1).png
+Prince Itzla Arkan	NPC	https://osrs-tcg.net/images/npcs/detail/Prince_Itzla_Arkan_(disguised,_sword).png
+Dire Wolf Alpha	NPC	https://osrs-tcg.net/images/npcs/detail/Dire_Wolf_Alpha.png
+The Hueycoatl	NPC	https://osrs-tcg.net/images/npcs/detail/The_Hueycoatl.png
+Arrav	NPC	https://osrs-tcg.net/images/npcs/detail/Arrav.png
+Fire elemental	NPC	https://osrs-tcg.net/images/npcs/detail/Fire_elemental_(Royal_Titans).png
+Emissary Enforcer	NPC	https://osrs-tcg.net/images/npcs/detail/Emissary_Enforcer.png
+Emissary Archer	NPC	https://osrs-tcg.net/images/npcs/detail/Emissary_Archer_(2).png
+Black jaguar	NPC	https://osrs-tcg.net/images/npcs/detail/Black_jaguar_(Scrambled!).png
+Juvenile custodian stalker	NPC	https://osrs-tcg.net/images/npcs/detail/Juvenile_custodian_stalker.png
+Doom of Mokhaiotl	NPC	https://osrs-tcg.net/images/npcs/detail/Doom_of_Mokhaiotl.png
+Gryphon	NPC	https://osrs-tcg.net/images/npcs/detail/Gryphon.png
+Frost dragon	NPC	https://osrs-tcg.net/images/npcs/detail/Frost_dragon.png
+Mayor of Catherby	NPC	https://osrs-tcg.net/images/npcs/detail/Mayor_of_Catherby.png
+Blue dagannoth	NPC	https://osrs-tcg.net/images/npcs/detail/Blue_dagannoth.png
+Chuck up	NPC	https://osrs-tcg.net/images/npcs/detail/Chuck_up.png
+Bull shark	NPC	https://osrs-tcg.net/images/npcs/detail/Bull_shark.png
+Great white shark	NPC	https://osrs-tcg.net/images/npcs/detail/Great_white_shark.png
+Pygmy kraken	NPC	https://osrs-tcg.net/images/npcs/detail/Pygmy_kraken.png
+Vampyre kraken	NPC	https://osrs-tcg.net/images/npcs/detail/Vampyre_kraken.png
+Stingray	NPC	https://osrs-tcg.net/images/npcs/detail/Stingray.png
+Albatross	NPC	https://osrs-tcg.net/images/npcs/detail/Albatross.png
+Dolphin	NPC	https://osrs-tcg.net/images/npcs/detail/Dolphin_(Sailing).png
+Giant wasp	NPC	https://osrs-tcg.net/images/npcs/detail/Giant_wasp.png
+Aquanite	NPC	https://osrs-tcg.net/images/npcs/detail/Aquanite.png
+Elder aquanite	NPC	https://osrs-tcg.net/images/npcs/detail/Elder_aquanite_(lure).png
+Splatter	NPC	https://osrs-tcg.net/images/npcs/detail/Splatter_(level_54).png

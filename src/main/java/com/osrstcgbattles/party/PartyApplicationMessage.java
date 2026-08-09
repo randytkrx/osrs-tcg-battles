@@ -1,6 +1,5 @@
 package com.osrstcgbattles.party;
 
-import com.google.gson.Gson;
 import java.util.Map;
 import java.util.Objects;
 
@@ -14,7 +13,7 @@ public final class PartyApplicationMessage
 	private final Map<String, Object> payload;
 
 	public PartyApplicationMessage(BattlePartyMessageType type, String matchId, long peerMemberId, long sequence,
-		Map<String, ?> payload)
+		Map<String, ?> payload, CanonicalPartyJsonCodec codec)
 	{
 		if (!isAllowedType(type)) throw new IllegalArgumentException("unsupported application message type");
 		if (matchId == null || matchId.isEmpty() || matchId.length() > BattlePartyEnvelope.MAX_ID_LENGTH)
@@ -23,7 +22,6 @@ public final class PartyApplicationMessage
 		if (sequence <= 0 || sequence > BattlePartyEnvelope.MAX_SEQUENCE)
 			throw new IllegalArgumentException("sequence is out of bounds");
 		Objects.requireNonNull(payload, "payload");
-		CanonicalPartyJsonCodec codec = new CanonicalPartyJsonCodec(new Gson());
 		this.type = type;
 		this.matchId = matchId;
 		this.peerMemberId = peerMemberId;

@@ -63,9 +63,21 @@ public final class PlayerState
 			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 	}
 
+	PlayerState gainMana(int amount)
+	{
+		return copy(heroHealth, Math.min(GwentEngine.MAXIMUM_MANA, mana + amount), maximumMana, fatigue,
+			turnsStarted, hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
+	}
+
 	PlayerState damageHero(int amount)
 	{
 		return copy(Math.max(0, heroHealth - amount), mana, maximumMana, fatigue, turnsStarted,
+			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
+	}
+
+	PlayerState healHero(int amount)
+	{
+		return copy(Math.min(GwentEngine.HERO_HEALTH, heroHealth + amount), mana, maximumMana, fatigue, turnsStarted,
 			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 	}
 

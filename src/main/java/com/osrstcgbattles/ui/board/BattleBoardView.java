@@ -14,6 +14,7 @@ import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.PlayerState;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.Point;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -72,6 +73,23 @@ public final class BattleBoardView
 		boardPanel.setUnitClickListener(this::onUnitClicked);
 		boardPanel.setCancelListener(this::cancelSelection);
 		handPanel.setCardClickListener(this::onHandCardClicked);
+		handPanel.setCardDragListener(new HandPanel.CardDragListener()
+		{
+			@Override
+			public void onCardDragged(String cardId, Point boardPoint)
+			{
+				boolean valid = controlsEnabled && state != null && state.getPhase() == MatchPhase.PLAY
+					&& boardPanel.getBounds().contains(boardPoint) && interaction.isHandCardPlayable(cardId);
+				root.showCardDrag(cardId, boardPoint, valid);
+			}
+
+			@Override
+			public void onCardDropped(String cardId, Point boardPoint)
+			{
+				root.hideCardDrag();
+				onHandCardDropped(cardId, boardPoint);
+			}
+		});
 		handPanel.setCancelListener(this::cancelSelection);
 		opponentHandPanel.setCancelListener(this::cancelSelection);
 		installCancelKeyBinding();
@@ -230,6 +248,21 @@ public final class BattleBoardView
 			interaction.clickHandCardForMulligan(cardId).ifPresent(this::emit);
 			return;
 		}
+		selectCardForPlay(cardId);
+	}
+
+	void onHandCardDropped(String cardId, Point boardPoint)
+	{
+		if (!controlsEnabled || state == null || state.getPhase() != MatchPhase.PLAY
+			|| boardPoint == null || !boardPanel.getBounds().contains(boardPoint))
+		{
+			return;
+		}
+		selectCardForPlay(cardId);
+	}
+
+	private void selectCardForPlay(String cardId)
+	{
 		if (interaction.selectHandCard(cardId))
 		{
 			Optional<Command> command = interaction.commit();
@@ -290,6 +323,7 @@ public final class BattleBoardView
 		boardPanel.setInteractionPending(interaction.isTargetPending()
 			|| interaction.getSelectedAttackerId().isPresent());
 		handPanel.setSelected(interaction.getSelectedCardId().orElse(null));
+		root.setTargetPrompt(interaction.targetPrompt().orElse(null));
 		refreshHandPlayability();
 		refreshControls();
 	}

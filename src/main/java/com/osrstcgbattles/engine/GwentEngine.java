@@ -1,23 +1,30 @@
 package com.osrstcgbattles.engine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 
 /** Deterministic, immutable Hearthstone-lite rules engine. */
 public final class GwentEngine
 {
-	public static final int RULESET_VERSION = 3;
+	public static final int RULESET_VERSION = 7;
 	public static final int HERO_HEALTH = 20;
 	public static final int DECK_SIZE = 30;
-	public static final int OPENING_HAND_SIZE = 3;
+	public static final int OPENING_HAND_SIZE = 5;
 	public static final int HAND_LIMIT = 10;
 	public static final int BATTLEFIELD_LIMIT = 7;
 	public static final int MAXIMUM_MANA = 10;
+	private static final UnitCard DEATHRATTLE_SPIRIT = new UnitCard("deathrattle-spirit", "Spirit", 0, 1, 1);
+	private static final Set<String> NEX_COMMANDERS = new HashSet<>(Arrays.asList(
+		"asgarnia-general-graardor", "asgarnia-commander-zilyana", "asgarnia-kreearra",
+		"asgarnia-kril-tsutsaroth"));
 	/** @deprecated Use {@link #BATTLEFIELD_LIMIT}. */
 	@Deprecated public static final int ROW_CAPACITY = BATTLEFIELD_LIMIT;
 
@@ -109,6 +116,11 @@ public final class GwentEngine
 		{
 			return reject(state, RejectionReason.BATTLEFIELD_FULL);
 		}
+		if (card instanceof UnitCard && ((UnitCard) card).hasKeyword(UnitKeyword.NEX_ASCENSION)
+			&& !hasNexCommanders(state.getBoard(), command.getPlayer()))
+		{
+			return reject(state, RejectionReason.NEX_REQUIRES_COMMANDERS);
+		}
 		List<DeployEffect> effects = card instanceof UnitCard ? ((UnitCard) card).getDeployEffects()
 			: ((SpecialCard) card).getDeployEffects();
 		RejectionReason targetError = validateTarget(state.getBoard(), command.getPlayer(),
@@ -126,9 +138,19 @@ public final class GwentEngine
 			board = board.add(command.getPlayer(), BoardUnit.deploy(deployedId, (UnitCard) card));
 		}
 		else players.put(command.getPlayer(), players.get(command.getPlayer()).addToGraveyard(card));
+		if (card instanceof UnitCard && ((UnitCard) card).hasKeyword(UnitKeyword.NEX_ASCENSION))
+		{
+			return accept(new MatchState(state.getTurnNumber(), state.getStartingPlayer(), null,
+				MatchStatus.COMPLETE, MatchPhase.COMPLETE, command.getPlayer(), players, board, nextId));
+		}
 
 		for (DeployEffect effect : effects)
 		{
+			if (effect.getType() == DeployEffect.Type.MANA)
+			{
+				players.put(command.getPlayer(), players.get(command.getPlayer()).gainMana(effect.getAmount()));
+				continue;
+			}
 			String targetId = effect.getTarget() == DeployEffect.Target.SELF
 				? deployedId : command.getTargetInstanceId().get();
 			BoardUnit target = board.find(targetId);
@@ -140,12 +162,11 @@ public final class GwentEngine
 			}
 			else
 			{
-				board = board.replace(target.withStats(target.getCurrentAttack(),
-					target.getCurrentHealth() - effect.getAmount()));
-				board = removeDead(board, players, targetId);
+				board = board.replace(damage(target, effect.getAmount()).unit);
 			}
 		}
-		return accept(copy(state, command.getPlayer(), players, board, nextId));
+		DeathResolution deaths = resolveDeaths(board, players, nextId);
+		return accept(completeIfDead(state, players, deaths.board, deaths.nextUnitId));
 	}
 
 	private CommandResult attack(MatchState state, AttackCommand command)
@@ -155,30 +176,46 @@ public final class GwentEngine
 		if (state.getBoard().ownerOf(attacker.getInstanceId()) != command.getPlayer())
 			return reject(state, RejectionReason.ATTACKER_NOT_ALLIED);
 		if (!attacker.isReady()) return reject(state, RejectionReason.ATTACKER_NOT_READY);
-		Map<PlayerId, PlayerState> players = copyPlayers(state);
-		BoardState board = state.getBoard().replace(attacker.withReady(false));
 		if (!command.getTargetInstanceId().isPresent())
 		{
 			PlayerId opponent = command.getPlayer().opponent();
+			if (attacker.isRushRestricted()) return reject(state, RejectionReason.RUSH_CANNOT_ATTACK_HERO);
 			if (!state.getBoard().getUnits(opponent).isEmpty())
 			{
 				return reject(state, RejectionReason.HERO_PROTECTED);
 			}
+			Map<PlayerId, PlayerState> players = copyPlayers(state);
+			BoardState board = state.getBoard().replace(attacker.reveal().withReady(false));
+			int damage = Math.min(attacker.getCurrentAttack(), players.get(opponent).getHeroHealth());
 			players.put(opponent, players.get(opponent).damageHero(attacker.getCurrentAttack()));
+			if (attacker.hasKeyword(UnitKeyword.LIFESTEAL))
+				players.put(command.getPlayer(), players.get(command.getPlayer()).healHero(damage));
 			return accept(completeIfDead(state, players, board, state.getNextUnitInstanceId()));
 		}
 		String targetId = command.getTargetInstanceId().get();
-		BoardUnit target = board.find(targetId);
+		BoardUnit target = state.getBoard().find(targetId);
 		if (target == null) return reject(state, RejectionReason.TARGET_NOT_FOUND);
-		if (board.ownerOf(targetId) != command.getPlayer().opponent())
+		if (state.getBoard().ownerOf(targetId) != command.getPlayer().opponent())
 			return reject(state, RejectionReason.TARGET_NOT_ENEMY);
-		board = board.replace(attacker.withStats(attacker.getCurrentAttack(),
-			attacker.getCurrentHealth() - target.getCurrentAttack()).withReady(false));
-		board = board.replace(target.withStats(target.getCurrentAttack(),
-			target.getCurrentHealth() - attacker.getCurrentAttack()));
-		board = removeDead(board, players, attacker.getInstanceId());
-		board = removeDead(board, players, targetId);
-		return accept(copy(state, command.getPlayer(), players, board, state.getNextUnitInstanceId()));
+		if (target.isStealthed()) return reject(state, RejectionReason.TARGET_STEALTHED);
+		if (hasVisibleTaunt(state.getBoard(), command.getPlayer().opponent())
+			&& !target.hasKeyword(UnitKeyword.TAUNT)) return reject(state, RejectionReason.TAUNT_PROTECTED);
+
+		Map<PlayerId, PlayerState> players = copyPlayers(state);
+		Damage toTarget = damage(target, attacker.getCurrentAttack());
+		Damage toAttacker = damage(attacker.reveal(), target.getCurrentAttack());
+		if (attacker.hasKeyword(UnitKeyword.POISONOUS) && toTarget.amount > 0)
+			toTarget = toTarget.kill();
+		if (target.hasKeyword(UnitKeyword.POISONOUS) && toAttacker.amount > 0)
+			toAttacker = toAttacker.kill();
+		BoardState board = state.getBoard().replace(toAttacker.unit.withReady(false)).replace(toTarget.unit);
+		if (attacker.hasKeyword(UnitKeyword.LIFESTEAL))
+			players.put(command.getPlayer(), players.get(command.getPlayer()).healHero(toTarget.amount));
+		PlayerId opponent = command.getPlayer().opponent();
+		if (target.hasKeyword(UnitKeyword.LIFESTEAL))
+			players.put(opponent, players.get(opponent).healHero(toAttacker.amount));
+		DeathResolution deaths = resolveDeaths(board, players, state.getNextUnitInstanceId());
+		return accept(completeIfDead(state, players, deaths.board, deaths.nextUnitId));
 	}
 
 	private CommandResult endTurn(MatchState state)
@@ -211,32 +248,111 @@ public final class GwentEngine
 	private static RejectionReason validateTarget(BoardState board, PlayerId player, String targetId,
 		List<DeployEffect> effects)
 	{
-		boolean required = effects.stream().anyMatch(effect -> effect.getTarget() != DeployEffect.Target.SELF);
+		boolean required = effects.stream().anyMatch(effect -> effect.getTarget() == DeployEffect.Target.ALLIED_UNIT
+			|| effect.getTarget() == DeployEffect.Target.ENEMY_UNIT);
 		if (required && targetId == null) return RejectionReason.TARGET_REQUIRED;
 		if (!required && targetId != null) return RejectionReason.TARGET_NOT_ALLOWED;
 		if (!required) return null;
 		PlayerId owner = board.ownerOf(targetId);
 		if (owner == null) return RejectionReason.TARGET_NOT_FOUND;
+		BoardUnit target = board.find(targetId);
 		for (DeployEffect effect : effects)
 		{
 			if (effect.getTarget() == DeployEffect.Target.ALLIED_UNIT && owner != player)
 				return RejectionReason.TARGET_NOT_ALLIED;
 			if (effect.getTarget() == DeployEffect.Target.ENEMY_UNIT && owner != player.opponent())
 				return RejectionReason.TARGET_NOT_ENEMY;
+			if (effect.getTarget() == DeployEffect.Target.ENEMY_UNIT && target.isStealthed())
+				return RejectionReason.TARGET_STEALTHED;
 		}
 		return null;
 	}
 
-	private static BoardState removeDead(BoardState board, Map<PlayerId, PlayerState> players, String instanceId)
+	private static boolean hasVisibleTaunt(BoardState board, PlayerId player)
 	{
-		BoardUnit unit = board.find(instanceId);
-		if (unit != null && unit.getCurrentHealth() <= 0)
+		return board.getUnits(player).stream().anyMatch(unit -> unit.hasKeyword(UnitKeyword.TAUNT)
+			&& !unit.isStealthed());
+	}
+
+	public static boolean hasNexCommanders(BoardState board, PlayerId player)
+	{
+		Set<String> present = new HashSet<>();
+		for (BoardUnit unit : board.getUnits(player)) present.add(unit.getDefinition().getId());
+		return present.containsAll(NEX_COMMANDERS);
+	}
+
+	private static Damage damage(BoardUnit unit, int amount)
+	{
+		if (amount <= 0) return new Damage(unit, 0);
+		if (unit.isShielded()) return new Damage(unit.withoutShield(), 0);
+		int dealt = Math.min(amount, Math.max(0, unit.getCurrentHealth()));
+		return new Damage(unit.withStats(unit.getCurrentAttack(), unit.getCurrentHealth() - amount), dealt);
+	}
+
+	private static DeathResolution resolveDeaths(BoardState source, Map<PlayerId, PlayerState> players, long nextId)
+	{
+		BoardState board = source;
+		List<DeadUnit> dead = new ArrayList<>();
+		for (PlayerId owner : PlayerId.values())
 		{
-			PlayerId owner = board.ownerOf(instanceId);
-			players.put(owner, players.get(owner).addToGraveyard(unit.getDefinition()));
-			return board.remove(instanceId);
+			for (BoardUnit unit : source.getUnits(owner))
+				if (unit.getCurrentHealth() <= 0) dead.add(new DeadUnit(owner, unit));
 		}
-		return board;
+		for (DeadUnit death : dead)
+		{
+			board = board.remove(death.unit.getInstanceId());
+			players.put(death.owner, players.get(death.owner).addToGraveyard(death.unit.getDefinition()));
+		}
+		for (DeadUnit death : dead)
+		{
+			for (DeathrattleEffect effect : death.unit.getDefinition().getDeathrattles())
+			{
+				switch (effect.getType())
+				{
+					case DAMAGE_ENEMY_HERO:
+						PlayerId opponent = death.owner.opponent();
+						players.put(opponent, players.get(opponent).damageHero(effect.getAmount()));
+						break;
+					case DRAW_CARD:
+						for (int i = 0; i < effect.getAmount(); i++)
+							players.put(death.owner, players.get(death.owner).drawOne(HAND_LIMIT));
+						break;
+					case SUMMON_SPIRIT:
+						for (int i = 0; i < effect.getAmount()
+							&& board.getUnits(death.owner).size() < BATTLEFIELD_LIMIT; i++)
+							board = board.add(death.owner, BoardUnit.deploy("unit-" + nextId++, DEATHRATTLE_SPIRIT));
+						break;
+					default: throw new IllegalStateException("unsupported Deathrattle");
+				}
+			}
+		}
+		return new DeathResolution(board, nextId);
+	}
+
+	private static final class Damage
+	{
+		private final BoardUnit unit;
+		private final int amount;
+		private Damage(BoardUnit unit, int amount) { this.unit = unit; this.amount = amount; }
+		private Damage kill() { return new Damage(unit.withStats(unit.getCurrentAttack(), 0), amount); }
+	}
+
+	private static final class DeadUnit
+	{
+		private final PlayerId owner;
+		private final BoardUnit unit;
+		private DeadUnit(PlayerId owner, BoardUnit unit) { this.owner = owner; this.unit = unit; }
+	}
+
+	private static final class DeathResolution
+	{
+		private final BoardState board;
+		private final long nextUnitId;
+		private DeathResolution(BoardState board, long nextUnitId)
+		{
+			this.board = board;
+			this.nextUnitId = nextUnitId;
+		}
 	}
 
 	private static MatchState completeIfDead(MatchState source, Map<PlayerId, PlayerState> players,
@@ -259,7 +375,15 @@ public final class GwentEngine
 		Objects.requireNonNull(deck, name);
 		if (deck.size() != DECK_SIZE) throw new IllegalArgumentException(name + " must contain exactly 30 cards");
 		List<Card> copy = new ArrayList<>(deck.size());
-		for (Card card : deck) copy.add(Objects.requireNonNull(card, name + " contains null"));
+		for (Card card : deck)
+		{
+			Card supported = Objects.requireNonNull(card, name + " contains null");
+			if (!(supported instanceof UnitCard) && !(supported instanceof SpecialCard))
+			{
+				throw new IllegalArgumentException(name + " contains an unsupported card type");
+			}
+			copy.add(supported);
+		}
 		return copy;
 	}
 

@@ -2,7 +2,10 @@ package com.osrstcgbattles.art;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import net.runelite.client.game.ItemManager;
@@ -15,6 +18,7 @@ public final class RuneLiteCardArtProvider implements CardArtProvider
 	private final ItemManager itemManager;
 	private final SharedNpcImageCache npcImages;
 	private final CardArtCatalog catalog;
+	private final Map<String, Optional<BufferedImage>> itemImages = new ConcurrentHashMap<>();
 
 	public RuneLiteCardArtProvider(ItemManager itemManager, SharedNpcImageCache npcImages,
 		CardArtCatalog catalog)
@@ -42,7 +46,8 @@ public final class RuneLiteCardArtProvider implements CardArtProvider
 			npcImages.get(source.get().getImageUrl(), callback);
 			return;
 		}
-		deliver(callback, itemImage(azCardName));
+		deliver(callback, itemImages.computeIfAbsent(azCardName.toLowerCase(Locale.ROOT),
+			ignored -> Optional.ofNullable(itemImage(azCardName))).orElse(null));
 	}
 
 	private BufferedImage itemImage(String name)

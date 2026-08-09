@@ -7,4 +7,8 @@ public interface BattlePartyListener
 	default void onPartyApplicationMessage(PartyApplicationMessage message)
 	{
 	}
+
+	default void onPartyOperationFailed(String message)
+	{
+	}
 }

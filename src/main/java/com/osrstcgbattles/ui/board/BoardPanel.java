@@ -169,6 +169,8 @@ public class BoardPanel extends JPanel
 			}
 			CardTile tile = new CardTile(found.get(), art);
 			tile.setCurrentStats(unit.getCurrentAttack(), unit.getCurrentHealth());
+			tile.setShielded(unit.isShielded());
+			tile.setStealthed(unit.isStealthed());
 			// Enemy readiness does not affect whether that unit is a legal attack target.
 			tile.setExhausted(owner == viewSeat && !unit.isReady());
 			String instanceId = unit.getInstanceId();
