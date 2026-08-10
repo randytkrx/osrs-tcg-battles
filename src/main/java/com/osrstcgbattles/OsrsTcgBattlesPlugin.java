@@ -17,7 +17,7 @@ import com.osrstcgbattles.deck.DeckValidationResult;
 import com.osrstcgbattles.deck.DeckValidator;
 import com.osrstcgbattles.engine.GwentEngine;
 import com.osrstcgbattles.engine.MatchState;
-import com.osrstcgbattles.engine.UnitCard;
+import com.osrstcgbattles.engine.Card;
 import com.osrstcgbattles.integration.CatalogCardLookup;
 import com.osrstcgbattles.integration.CatalogDeckFactory;
 import com.osrstcgbattles.integration.StarterDeckFactory;
@@ -33,6 +33,7 @@ import com.osrstcgbattles.party.PartyDuelSnapshot;
 import com.osrstcgbattles.party.PartyOpponent;
 import com.osrstcgbattles.ui.BattleUiController;
 import com.osrstcgbattles.ui.DeckBuilderWindow;
+import com.osrstcgbattles.ui.DeckReadiness;
 import com.osrstcgbattles.ui.LocalBattleWindow;
 import com.osrstcgbattles.ui.OsrsTcgBattlesPanel;
 import com.osrstcgbattles.ui.PartyBattleWindow;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.inject.Inject;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
@@ -461,6 +463,54 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	}
 
 	@Override
+	public DeckReadiness getDeckReadiness(Deck deck)
+	{
+		OwnedCardCollectionSnapshot snapshot = collectionBridge.snapshot();
+		synchronized (stateLock)
+		{
+			boolean builtIn = starterDeckFactory != null && starterDeckFactory.isUnmodifiedStarter(deck);
+			DeckValidationResult validation = deckValidator.validate(deck, cardLookup, snapshot.getOwnedNames(),
+				builtIn ? false : snapshot.isKnown());
+			DeckReadiness.Status status;
+			if (builtIn && validation.isValid())
+			{
+				status = DeckReadiness.Status.BUILT_IN_STARTER;
+			}
+			else if (!validation.isValid())
+			{
+				status = DeckReadiness.Status.INVALID;
+			}
+			else if (!snapshot.isKnown())
+			{
+				status = DeckReadiness.Status.OWNERSHIP_PENDING;
+			}
+			else
+			{
+				status = DeckReadiness.Status.READY;
+			}
+			return new DeckReadiness(status, validation);
+		}
+	}
+
+	@Override
+	public List<Deck> getStarterDecks()
+	{
+		synchronized (stateLock)
+		{
+			return starterDeckFactory == null ? Collections.emptyList() : starterDeckFactory.createStarterDecks();
+		}
+	}
+
+	@Override
+	public boolean isStarterId(String deckId)
+	{
+		synchronized (stateLock)
+		{
+			return starterDeckFactory != null && starterDeckFactory.isStarterId(deckId);
+		}
+	}
+
+	@Override
 	public int copyLimit(BattleCard card)
 	{
 		synchronized (stateLock)
@@ -492,6 +542,13 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			}
 			DeckProfileRepository repository = profileRepository;
 			DeckProfile current = repository.getCurrent();
+			Deck persisted = current.getDecks().stream().filter(value -> value.getId().equals(deck.getId()))
+				.findFirst().orElse(null);
+			if (persisted != null && starterDeckFactory.isUnmodifiedStarter(persisted)
+				&& !starterDeckFactory.isUnmodifiedStarter(deck))
+			{
+				return;
+			}
 			List<Deck> decks = new ArrayList<>(current.getDecks());
 			int existing = -1;
 			for (int i = 0; i < decks.size(); i++)
@@ -540,6 +597,10 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				return;
 			}
 			DeckProfileRepository repository = profileRepository;
+			if (starterDeckFactory != null && starterDeckFactory.isStarterId(deckId))
+			{
+				return;
+			}
 			DeckProfile current = repository.getCurrent();
 			List<Deck> decks = new ArrayList<>(current.getDecks());
 			if (!decks.removeIf(deck -> deck.getId().equals(deckId)))
@@ -633,6 +694,8 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	{
 		long generation;
 		BattleCardCatalog currentCatalog;
+		Deck selected;
+		List<Deck> starters;
 		synchronized (stateLock)
 		{
 			if (!running)
@@ -641,11 +704,26 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			}
 			generation = lifecycleGeneration;
 			currentCatalog = catalog;
+			DeckProfile profile = profileRepository == null ? DeckProfile.empty() : profileRepository.getCurrent();
+			selected = profile.getSelectedDeckId().flatMap(id -> profile.getDecks().stream()
+				.filter(deck -> deck.getId().equals(id)).findFirst()).orElse(null);
+			starters = starterDeckFactory == null ? Collections.emptyList() : starterDeckFactory.createStarterDecks();
 		}
+		if (selected == null || !getDeckReadiness(selected).isPlayable())
+		{
+			JOptionPane.showMessageDialog(null, "Select a ready deck before starting a local battle.",
+				"Local Battle", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		String[] choices = starters.stream().map(Deck::getName).toArray(String[]::new);
+		String opponentName = (String) JOptionPane.showInputDialog(null, "Choose Player 2's deck:",
+			"Local Battle", JOptionPane.PLAIN_MESSAGE, null, choices, choices.length == 0 ? null : choices[0]);
+		if (opponentName == null) return;
+		Deck opponent = starters.stream().filter(deck -> deck.getName().equals(opponentName)).findFirst().orElse(null);
+		if (opponent == null) return;
 		CatalogDeckFactory factory = new CatalogDeckFactory(currentCatalog);
-		List<UnitCard> firstDeck = factory.demoDeck();
-		List<UnitCard> secondDeck = new ArrayList<>(factory.demoDeck());
-		Collections.rotate(secondDeck, secondDeck.size() / 3);
+		List<Card> firstDeck = factory.create(selected);
+		List<Card> secondDeck = factory.create(opponent);
 		GwentEngine engine = new GwentEngine();
 		MatchState match = engine.newMatchWithMulligan(firstDeck, secondDeck, DEMO_SEED);
 		SwingUtilities.invokeLater(() -> {
@@ -860,7 +938,6 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	{
 		Deck selected;
 		BattleCardCatalog currentCatalog;
-		OwnedCardCollectionSnapshot collection = collectionBridge.snapshot();
 		synchronized (stateLock)
 		{
 			if (!isCurrent(generation) || profileRepository == null)
@@ -868,42 +945,22 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				return null;
 			}
 			DeckProfile profile = profileRepository.getCurrent();
-				selected = profile.getSelectedDeckId().flatMap(id -> profile.getDecks().stream()
-					.filter(deck -> deck.getId().equals(id)).findFirst()).orElse(null);
-				currentCatalog = catalog;
-				partyUserMessage = null;
+			selected = profile.getSelectedDeckId().flatMap(id -> profile.getDecks().stream()
+				.filter(deck -> deck.getId().equals(id)).findFirst()).orElse(null);
+			currentCatalog = catalog;
+			partyUserMessage = null;
 		}
 		if (currentCatalog == null)
 		{
 			showPartyMessage(generation, "The card catalog is not loaded");
 			return null;
 		}
-		boolean randomFallback = false;
+		if (selected == null || !getDeckReadiness(selected).isPlayable())
+		{
+			showPartyMessage(generation, "Select a ready deck before starting a friend duel");
+			return null;
+		}
 		Deck duelDeck = selected;
-		if (selected == null)
-		{
-			randomFallback = true;
-		}
-		else if (!collection.isKnown() && !isUnmodifiedStarter(selected))
-		{
-			randomFallback = true;
-		}
-		else if (!validate(selected).isValid())
-		{
-			randomFallback = true;
-		}
-		if (randomFallback)
-		{
-			try
-			{
-				duelDeck = new CatalogDeckFactory(currentCatalog).randomDeck();
-			}
-			catch (RuntimeException exception)
-			{
-				showPartyMessage(generation, "Unable to build a random deck for the friend duel");
-				return null;
-			}
-		}
 		try
 		{
 			String commitment = DeckCommitment.compute(currentCatalog.getSha256(),
@@ -915,10 +972,6 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				if (!isCurrent(generation)) return null;
 				pendingPartyDeck = duelDeck;
 				sessionGeneration = ++partySessionGeneration;
-			}
-			if (randomFallback)
-			{
-				showPartyMessage(generation, "No valid deck selected - using a random 30-card deck");
 			}
 			return new PartyDeckMetadata(currentCatalog.getSha256(), currentCatalog.getRulesetVersion(),
 				duelDeck.getId(), commitment, sessionGeneration);
@@ -1372,6 +1425,24 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		public DeckValidationResult validate(Deck deck)
 		{
 			return OsrsTcgBattlesPlugin.this.validate(deck);
+		}
+
+		@Override
+		public DeckReadiness getDeckReadiness(Deck deck)
+		{
+			return OsrsTcgBattlesPlugin.this.getDeckReadiness(deck);
+		}
+
+		@Override
+		public List<Deck> getStarterDecks()
+		{
+			return OsrsTcgBattlesPlugin.this.getStarterDecks();
+		}
+
+		@Override
+		public boolean isStarterId(String deckId)
+		{
+			return OsrsTcgBattlesPlugin.this.isStarterId(deckId);
 		}
 
 		@Override

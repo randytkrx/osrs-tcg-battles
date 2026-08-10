@@ -9,6 +9,9 @@ import java.util.Optional;
 
 public final class BattleCardCatalog
 {
+	private static final BattleCard DEATHRATTLE_SPIRIT = new BattleCard("deathrattle-spirit", "Spirit", "Spirit",
+		CardCategory.UNIT, Faction.NEUTRAL, Rarity.COMMON, 0, 1, 1, Collections.singleton("TOKEN"),
+		"Summoned by a Deathrattle.", Collections.emptyList());
 	private final int catalogVersion;
 	private final int rulesetVersion;
 	private final String sha256;
@@ -38,5 +41,10 @@ public final class BattleCardCatalog
 	public String getSha256() { return sha256; }
 	public List<BattleCard> getCards() { return cards; }
 	public Optional<BattleCard> findById(String id) { return Optional.ofNullable(cardsById.get(id)); }
+	/** Includes non-collectible token definitions used only to render battlefield state. */
+	public Optional<BattleCard> findBoardCardById(String id)
+	{
+		return DEATHRATTLE_SPIRIT.getId().equals(id) ? Optional.of(DEATHRATTLE_SPIRIT) : findById(id);
+	}
 	public Optional<BattleCard> findByAzCardName(String azCardName) { return Optional.ofNullable(cardsByAzName.get(azCardName)); }
 }

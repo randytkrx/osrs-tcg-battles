@@ -20,11 +20,14 @@ import java.util.function.Predicate;
 /** Deterministic built-in decks. Exact definitions are playable without collection ownership. */
 public final class StarterDeckFactory
 {
+	// IDs are immutable template versions. A changed starter definition must receive a new ID.
 	public static final String DEATHRATTLE_ID = "starter-deathrattle-value";
 	public static final String RUSH_ID = "starter-rush-swarm";
 	public static final String BULWARK_ID = "starter-gielinor-bulwark";
 
 	private final List<BattleCard> cards;
+	private final List<Deck> starters;
+	private final Map<String, Deck> startersById;
 
 	public StarterDeckFactory(BattleCardCatalog catalog)
 	{
@@ -32,20 +35,34 @@ public final class StarterDeckFactory
 		cards = new ArrayList<>(catalog.getCards());
 		cards.sort(Comparator.comparingInt(BattleCard::getManaCost)
 			.thenComparing(BattleCard::getId));
+		List<Deck> built = new ArrayList<>();
+		built.add(deathrattleValue());
+		built.add(rushSwarm());
+		built.add(gielinorBulwark());
+		starters = Collections.unmodifiableList(built);
+		Map<String, Deck> byId = new LinkedHashMap<>();
+		for (Deck starter : starters) byId.put(starter.getId(), starter);
+		startersById = Collections.unmodifiableMap(byId);
 	}
 
 	public List<Deck> createStarterDecks()
 	{
-		List<Deck> starters = new ArrayList<>();
-		starters.add(deathrattleValue());
-		starters.add(rushSwarm());
-		starters.add(gielinorBulwark());
-		return Collections.unmodifiableList(starters);
+		return starters;
 	}
 
 	public boolean isUnmodifiedStarter(Deck deck)
 	{
-		return deck != null && createStarterDecks().contains(deck);
+		return deck != null && deck.equals(startersById.get(deck.getId()));
+	}
+
+	public boolean isStarterId(String deckId)
+	{
+		return deckId != null && startersById.containsKey(deckId);
+	}
+
+	public Deck getStarter(String deckId)
+	{
+		return startersById.get(deckId);
 	}
 
 	private Deck deathrattleValue()

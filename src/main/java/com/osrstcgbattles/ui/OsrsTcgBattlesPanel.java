@@ -39,7 +39,7 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 	private final JLabel validationLabel = new JLabel();
 	private final JButton refreshButton = new JButton("Refresh Collection");
 	private final JButton builderButton = new JButton("Deck Builder");
-	private final JButton demoButton = new JButton("Local Demo");
+	private final JButton demoButton = new JButton("Local Battle");
 	private final JLabel partyStatusLabel = new JLabel();
 	private final JComboBox<PartyOpponent> opponentCombo = new JComboBox<>();
 	private final JButton inviteButton = new JButton("Invite");
@@ -197,6 +197,8 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 			+ "<h2 style='color:#deB452;margin-bottom:3px'>OSRS TCG Battles</h2>"
 			+ "<p>Build a <b>" + GwentEngine.DECK_SIZE + "-card deck</b>, reduce the enemy hero from <b>"
 			+ GwentEngine.HERO_HEALTH + " health</b> to zero, and protect your own.</p>"
+			+ section("Before You Build", "Use the <b>OSRS TCG</b> plugin to open card packs and start your collection. "
+				+ "Collected cards can be used in custom decks; unchanged built-in starters are ready immediately.")
 			+ section("1. Opening Hand", "Draw " + GwentEngine.OPENING_HAND_SIZE
 				+ " cards. Click cards to replace them during the mulligan, then press <b>Keep Hand</b>.")
 			+ section("2. Mana", "You begin with 1 mana crystal. Your maximum mana grows by one each turn, up to "
@@ -206,8 +208,9 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 				+ "resolve their effect immediately. You may control up to " + GwentEngine.BATTLEFIELD_LIMIT + " units.")
 			+ section("4. Deploy Effects", "Some cards damage an enemy or strengthen an ally when played. After selecting "
 				+ "the card, click a glowing target. <b>Hover any card to read its full effect.</b>")
-			+ section("5. Combat", "New units have summoning sickness and cannot attack until your next turn. Select a ready "
-				+ "unit, then attack an enemy unit or, if the enemy board is empty, the enemy hero. Units deal damage to "
+			+ section("5. Combat", "New units have summoning sickness and cannot attack until your next turn. Click a ready "
+				+ "unit and its target, or drag the unit directly onto an enemy card or hero. The enemy hero can only be "
+				+ "attacked while its board is empty. Units deal damage to "
 				+ "each other simultaneously.")
 			+ section("6. Keywords", "Shield blocks the first damage; Lifesteal heals your hero; Poisonous destroys damaged "
 				+ "units; Rush attacks units immediately; Taunt must be attacked first; Stealth prevents enemy targeting "
@@ -218,7 +221,7 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 			+ section("8. Controls", "<b>Right-click</b> or press <b>Esc</b> to cancel a selection. Press <b>End Turn</b> when "
 				+ "finished. You may concede at any time.")
 			+ section("Friend Duels", "Join the same RuneLite party, choose an eligible member on the Play tab, and send an "
-				+ "invite. A random 30-card deck is supplied when your selected deck or collection is unavailable.")
+				+ "invite. Your selected deck must be ready before an invitation can be sent or accepted.")
 			+ "<p style='color:#9f9685'><i>Tip: green borders are playable or ready, gold is selected, and red marks legal targets.</i></p>"
 			+ "</body></html>";
 	}
@@ -252,8 +255,8 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		Deck selected = profile.getSelectedDeckId().flatMap(id -> profile.getDecks().stream()
 			.filter(deck -> deck.getId().equals(id)).findFirst()).orElse(null);
 		deckLabel.setText("Selected deck: " + (selected == null ? "None" : selected.getName()));
-		validationLabel.setText(selected == null ? "Validation: No deck selected"
-			: "Validation: " + BattleUiFormatters.validation(controller.validate(selected), collection.isKnown()));
+		DeckReadiness readiness = selected == null ? null : controller.getDeckReadiness(selected);
+		validationLabel.setText(readiness == null ? "Status: No deck selected" : "Status: " + readiness.getLabel());
 
 		long selectedOpponentId = selectedOpponentId();
 		List<PartyOpponent> opponents = controller.getPartyOpponents();
@@ -273,10 +276,9 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		boolean hasOpponent = opponentCombo.getSelectedItem() != null;
 		opponentCombo.setEnabled(duel.getStatus() == PartyDuelSnapshot.Status.IDLE
 			|| duel.getStatus() == PartyDuelSnapshot.Status.TERMINAL);
-		// A missing or invalid deck now falls back to a random 30-card deck, so the duel is
-		// always startable; deck validation is still shown above for the player's information.
-		inviteButton.setEnabled(BattleUiFormatters.canInvitePartyDuel(duel, hasOpponent, true));
-		acceptButton.setEnabled(BattleUiFormatters.canAcceptPartyDuel(duel, true));
+		boolean deckAvailable = readiness != null && readiness.isPlayable();
+		inviteButton.setEnabled(BattleUiFormatters.canInvitePartyDuel(duel, hasOpponent, deckAvailable));
+		acceptButton.setEnabled(BattleUiFormatters.canAcceptPartyDuel(duel, deckAvailable));
 		declineButton.setEnabled(duel.canDecline());
 		abortButton.setEnabled(duel.canAbort());
 	}
@@ -306,7 +308,7 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		collectionLabel.setText("Collection: Not loaded");
 		catalogLabel.setText("Catalog: Not loaded");
 		deckLabel.setText("Selected deck: None");
-		validationLabel.setText("Validation: No deck selected");
+		validationLabel.setText("Status: No deck selected");
 		partyStatusLabel.setText("Friend duel unavailable");
 	}
 

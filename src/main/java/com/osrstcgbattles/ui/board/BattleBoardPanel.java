@@ -38,6 +38,8 @@ public final class BattleBoardPanel extends JLayeredPane
 	private final TurnButton endTurnButton = new TurnButton("END TURN");
 	private final TurnButton keepHandButton = new TurnButton("KEEP HAND");
 	private final JButton concedeButton = secondaryButton("Concede", new Color(145, 62, 55));
+	private final JButton battleLogButton = secondaryButton("Battle Log", new Color(78, 113, 147));
+	private final BattleLogPanel battleLog = new BattleLogPanel();
 	private final StatusPlaque status = new StatusPlaque();
 	private final TurnBanner turnBanner = new TurnBanner();
 	private final TargetPrompt targetPrompt = new TargetPrompt();
@@ -66,12 +68,19 @@ public final class BattleBoardPanel extends JLayeredPane
 		add(endTurnButton, MODAL_LAYER);
 		add(keepHandButton, MODAL_LAYER);
 		add(concedeButton, MODAL_LAYER);
+		add(battleLogButton, MODAL_LAYER);
+		add(battleLog, POPUP_LAYER);
 		add(turnBanner, POPUP_LAYER);
 		add(targetPrompt, POPUP_LAYER);
 		add(dragGhost, DRAG_LAYER);
 		add(resultOverlay, DRAG_LAYER);
 		targetPrompt.setVisible(false);
 		dragGhost.setVisible(false);
+		battleLog.setVisible(false);
+		battleLogButton.addActionListener(event -> {
+			battleLog.setVisible(!battleLog.isVisible());
+			battleLogButton.setText(battleLog.isVisible() ? "Hide Log" : "Battle Log");
+		});
 	}
 
 	@Override
@@ -88,6 +97,16 @@ public final class BattleBoardPanel extends JLayeredPane
 		endTurnButton.setBounds(geometry.getTurnControl());
 		keepHandButton.setBounds(geometry.getTurnControl());
 		concedeButton.setBounds(geometry.getConcedeControl());
+		Rectangle turn = geometry.getTurnControl();
+		Rectangle concede = geometry.getConcedeControl();
+		int logButtonHeight = 26;
+		int logButtonY = Math.max(turn.y + turn.height + 8, concede.y - logButtonHeight - 6);
+		battleLogButton.setBounds(concede.x, logButtonY, concede.width, logButtonHeight);
+		int logWidth = Math.min(230, Math.max(180, concede.width * 2));
+		int availableHeight = Math.max(0, logButtonY - turn.y - turn.height - 14);
+		int logHeight = Math.min(190, availableHeight);
+		battleLog.setBounds(Math.max(4, concede.x + concede.width - logWidth), logButtonY - logHeight - 5,
+			logWidth, logHeight);
 		status.setBounds(geometry.getStatus());
 		turnBanner.setBounds(geometry.getTurnBanner());
 		Rectangle field = geometry.getBattlefield();
@@ -183,6 +202,8 @@ public final class BattleBoardPanel extends JLayeredPane
 	TurnButton getEndTurnButton() { return endTurnButton; }
 	TurnButton getKeepHandButton() { return keepHandButton; }
 	JButton getConcedeButton() { return concedeButton; }
+	JButton getBattleLogButton() { return battleLogButton; }
+	BattleLogPanel getBattleLog() { return battleLog; }
 	TurnBanner getTurnBanner() { return turnBanner; }
 	BattleResultOverlay getResultOverlay() { return resultOverlay; }
 
@@ -217,6 +238,11 @@ public final class BattleBoardPanel extends JLayeredPane
 	void hideCardDrag()
 	{
 		dragGhost.setVisible(false);
+	}
+
+	void appendBattleLog(String entry)
+	{
+		battleLog.append(entry);
 	}
 
 	private static JButton secondaryButton(String text, Color accent)

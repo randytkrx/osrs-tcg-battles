@@ -21,6 +21,12 @@ public interface BattleUiController
 
 	DeckValidationResult validate(Deck deck);
 
+	DeckReadiness getDeckReadiness(Deck deck);
+
+	List<Deck> getStarterDecks();
+
+	boolean isStarterId(String deckId);
+
 	default int copyLimit(BattleCard card)
 	{
 		String rarity = card.getRarity().name();

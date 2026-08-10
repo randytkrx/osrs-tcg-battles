@@ -16,5 +16,8 @@ public class OsrsTcgBattlesPanelTest
 		assertTrue(rules.contains("summoning sickness"));
 		assertTrue(rules.contains("fatigue"));
 		assertTrue(rules.contains("Hover any card"));
+		assertTrue(rules.contains("OSRS TCG"));
+		assertTrue(rules.contains("open card packs"));
+		assertTrue(rules.contains("drag the unit"));
 	}
 }

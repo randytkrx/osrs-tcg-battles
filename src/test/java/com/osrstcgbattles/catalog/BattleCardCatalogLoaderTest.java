@@ -6,11 +6,24 @@ import java.util.EnumSet;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class BattleCardCatalogLoaderTest
 {
+	@Test
+	public void exposesDeathrattleSpiritOnlyAsABoardToken()
+	{
+		BattleCardCatalog catalog = new BattleCardCatalogLoader(new Gson()).loadDefault();
+
+		assertFalse(catalog.findById("deathrattle-spirit").isPresent());
+		BattleCard spirit = catalog.findBoardCardById("deathrattle-spirit").get();
+		assertEquals("Spirit", spirit.getDisplayName());
+		assertEquals(1, spirit.getAttack());
+		assertEquals(1, spirit.getHealth());
+	}
+
 	@Test
 	public void rejectsEffectsRequiringDifferentCommandTargets()
 	{

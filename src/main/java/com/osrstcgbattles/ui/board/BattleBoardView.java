@@ -3,6 +3,8 @@ package com.osrstcgbattles.ui.board;
 import com.osrstcgbattles.art.CardArtProvider;
 import com.osrstcgbattles.catalog.BattleCardCatalog;
 import com.osrstcgbattles.engine.Card;
+import com.osrstcgbattles.engine.BoardUnit;
+import com.osrstcgbattles.engine.AttackCommand;
 import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.ConcedeCommand;
 import com.osrstcgbattles.engine.EndTurnCommand;
@@ -12,6 +14,8 @@ import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
 import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.PlayerState;
+import com.osrstcgbattles.engine.PlayCardCommand;
+import com.osrstcgbattles.engine.SpecialCard;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.Point;
@@ -25,6 +29,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
 /**
  * State-in/command-out adapter for the cohesive battle surface. Engine and network ownership stay
@@ -51,6 +56,7 @@ public final class BattleBoardView
 	private boolean controlsEnabled = true;
 	private String banner = " ";
 	private boolean hasPreviousState;
+	private String draggedAttackerId;
 
 	public BattleBoardView(PlayerId localSeat, BattleCardCatalog catalog, CardArtProvider art)
 	{
@@ -71,6 +77,20 @@ public final class BattleBoardView
 		concedeButton.addActionListener(event -> concede());
 		keepHandButton.addActionListener(event -> keepHand());
 		boardPanel.setUnitClickListener(this::onUnitClicked);
+		boardPanel.setUnitDragListener(new BoardPanel.UnitDragListener()
+		{
+			@Override
+			public void onUnitDragged(String instanceId, Point battleSurfacePoint)
+			{
+				BattleBoardView.this.onUnitDragged(instanceId, battleSurfacePoint);
+			}
+
+			@Override
+			public void onUnitDropped(String instanceId, Point battleSurfacePoint)
+			{
+				BattleBoardView.this.onUnitDropped(instanceId, battleSurfacePoint);
+			}
+		});
 		boardPanel.setCancelListener(this::cancelSelection);
 		handPanel.setCardClickListener(this::onHandCardClicked);
 		handPanel.setCardDragListener(new HandPanel.CardDragListener()
@@ -128,7 +148,9 @@ public final class BattleBoardView
 	/** Adopts a new authoritative match state and drops any half-finished local selection. */
 	public void setState(MatchState state)
 	{
+		clearUnitDrag();
 		MatchState next = Objects.requireNonNull(state, "state");
+		recordStateChanges(this.state, next);
 		PlayerId previousActive = this.state == null ? null : this.state.getActivePlayer().orElse(null);
 		if (TurnBanner.shouldShow(hasPreviousState,
 			this.state == null ? null : this.state.getStatus(),
@@ -182,6 +204,7 @@ public final class BattleBoardView
 	public void setControlsEnabled(boolean enabled)
 	{
 		controlsEnabled = enabled;
+		if (!enabled) clearUnitDrag();
 		refreshHighlighting();
 	}
 
@@ -235,6 +258,79 @@ public final class BattleBoardView
 		{
 			interaction.clickEnemyHero().ifPresent(this::emit);
 		}
+	}
+
+	private void onUnitDragged(String instanceId, Point battleSurfacePoint)
+	{
+		if (!controlsEnabled || state == null || battleSurfacePoint == null) return;
+		if (!instanceId.equals(draggedAttackerId))
+		{
+			interaction.cancel();
+			interaction.clickUnit(instanceId);
+			if (!interaction.getSelectedAttackerId().filter(instanceId::equals).isPresent()) return;
+			draggedAttackerId = instanceId;
+			refreshHighlighting();
+		}
+		BoardUnit attacker = boardUnit(instanceId);
+		if (attacker == null) return;
+		root.showCardDrag(attacker.getDefinition().getId(), battleSurfacePoint,
+			legalUnitAt(battleSurfacePoint) != null || legalHeroAt(battleSurfacePoint));
+	}
+
+	private void onUnitDropped(String instanceId, Point battleSurfacePoint)
+	{
+		root.hideCardDrag();
+		if (!controlsEnabled || state == null || !instanceId.equals(draggedAttackerId)
+			|| !interaction.getSelectedAttackerId().filter(instanceId::equals).isPresent())
+		{
+			clearUnitDrag();
+			return;
+		}
+		String target = legalUnitAt(battleSurfacePoint);
+		boolean hero = target == null && legalHeroAt(battleSurfacePoint);
+		draggedAttackerId = null;
+		Optional<Command> command = target != null ? interaction.clickUnit(target)
+			: hero ? interaction.clickEnemyHero() : Optional.empty();
+		if (command.isPresent()) emit(command.get());
+		else cancelSelection();
+	}
+
+	private String legalUnitAt(Point battleSurfacePoint)
+	{
+		if (battleSurfacePoint == null) return null;
+		Point boardPoint = SwingUtilities.convertPoint(root, battleSurfacePoint, boardPanel);
+		String target = boardPanel.unitAt(boardPoint);
+		if (target == null) return null;
+		for (BoardUnit unit : interaction.targetableUnits())
+		{
+			if (unit.getInstanceId().equals(target)) return target;
+		}
+		return null;
+	}
+
+	private boolean legalHeroAt(Point battleSurfacePoint)
+	{
+		return battleSurfacePoint != null && root.getOpponentHero().getBounds().contains(battleSurfacePoint)
+			&& interaction.isEnemyHeroTargetable();
+	}
+
+	private BoardUnit boardUnit(String instanceId)
+	{
+		if (state == null) return null;
+		for (PlayerId player : PlayerId.values())
+		{
+			for (BoardUnit unit : state.getBoard().getUnits(player))
+			{
+				if (unit.getInstanceId().equals(instanceId)) return unit;
+			}
+		}
+		return null;
+	}
+
+	private void clearUnitDrag()
+	{
+		draggedAttackerId = null;
+		root.hideCardDrag();
 	}
 
 	void onHandCardClicked(String cardId)
@@ -307,9 +403,108 @@ public final class BattleBoardView
 
 	private void emit(Command command)
 	{
+		recordCommand(command);
 		interaction.cancel();
 		refreshHighlighting();
 		commandListener.accept(command);
+	}
+
+	private void recordCommand(Command command)
+	{
+		if (command instanceof AttackCommand)
+		{
+			AttackCommand attack = (AttackCommand) command;
+			BoardUnit attacker = boardUnit(attack.getAttackerInstanceId());
+			String attackerName = attacker == null ? "Unit" : attacker.getDefinition().getName();
+			String targetName = attack.getTargetInstanceId().map(id -> {
+				BoardUnit target = boardUnit(id);
+				return target == null ? "enemy unit" : target.getDefinition().getName();
+			}).orElse("enemy hero");
+			root.appendBattleLog("You attacked " + targetName + " with " + attackerName + ".");
+		}
+		else if (command instanceof PlayCardCommand && state != null)
+		{
+			String cardId = ((PlayCardCommand) command).getCardId();
+			for (Card card : state.getPlayer(localSeat).getHand())
+			{
+				if (card.getId().equals(cardId) && card instanceof SpecialCard)
+				{
+					root.appendBattleLog("You played " + card.getName() + ".");
+					break;
+				}
+			}
+		}
+		else if (command instanceof ConcedeCommand)
+		{
+			root.appendBattleLog("You conceded the battle.");
+		}
+	}
+
+	private void recordStateChanges(MatchState previous, MatchState next)
+	{
+		if (previous == null)
+		{
+			root.appendBattleLog("Opening hands drawn.");
+			return;
+		}
+		if (previous.getPhase() == MatchPhase.MULLIGAN && next.getPhase() == MatchPhase.PLAY)
+		{
+			root.appendBattleLog("The battle begins.");
+		}
+		PlayerId previousActive = previous.getActivePlayer().orElse(null);
+		PlayerId nextActive = next.getActivePlayer().orElse(null);
+		if (next.getPhase() == MatchPhase.PLAY && nextActive != null && nextActive != previousActive)
+		{
+			root.appendBattleLog("Turn " + next.getTurnNumber() + ": "
+				+ (nextActive == localSeat ? "your turn." : "opponent's turn."));
+		}
+		for (PlayerId player : PlayerId.values())
+		{
+			for (BoardUnit unit : next.getBoard().getUnits(player))
+			{
+				if (findUnit(previous, unit.getInstanceId()) == null)
+				{
+					root.appendBattleLog((player == localSeat ? "You summoned " : "Opponent summoned ")
+						+ unit.getDefinition().getName() + ".");
+				}
+			}
+			for (BoardUnit unit : previous.getBoard().getUnits(player))
+			{
+				if (findUnit(next, unit.getInstanceId()) == null)
+				{
+					root.appendBattleLog(unit.getDefinition().getName() + " was defeated.");
+				}
+			}
+			int oldHealth = previous.getPlayer(player).getHeroHealth();
+			int newHealth = next.getPlayer(player).getHeroHealth();
+			if (newHealth < oldHealth)
+			{
+				root.appendBattleLog((player == localSeat ? "You took " : "Opponent took ")
+					+ (oldHealth - newHealth) + " damage.");
+			}
+			else if (newHealth > oldHealth)
+			{
+				root.appendBattleLog((player == localSeat ? "You recovered " : "Opponent recovered ")
+					+ (newHealth - oldHealth) + " health.");
+			}
+		}
+		if (previous.getStatus() != MatchStatus.COMPLETE && next.getStatus() == MatchStatus.COMPLETE)
+		{
+			root.appendBattleLog(next.getWinner().map(winner -> winner == localSeat ? "You won the battle."
+				: "Opponent won the battle.").orElse("The battle ended in a draw."));
+		}
+	}
+
+	private static BoardUnit findUnit(MatchState state, String instanceId)
+	{
+		for (PlayerId player : PlayerId.values())
+		{
+			for (BoardUnit unit : state.getBoard().getUnits(player))
+			{
+				if (unit.getInstanceId().equals(instanceId)) return unit;
+			}
+		}
+		return null;
 	}
 
 	private void refreshHighlighting()

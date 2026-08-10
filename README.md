@@ -1,47 +1,138 @@
 # OSRS TCG Battles
 
-OSRS TCG Battles turns collected Old School RuneScape cards into playable deck battles inside RuneLite. Build a 30-card deck, challenge a friend through a RuneLite Party, or play a local hot-seat match on a responsive tavern-style board.
+Build a deck from Old School RuneScape cards and battle inside RuneLite. OSRS TCG Battles combines a 400-card collection, a tavern-style deck workbench, local hot-seat matches, and encrypted friend duels over RuneLite Party.
 
-## Features
+## Highlights
 
-- A curated 400-card catalog compatible with the OSRS TCG collection.
-- Three ready-to-play starter decks that do not require an existing collection.
-- Custom deck building with ownership and copy-limit validation.
-- Local hot-seat matches and synchronized RuneLite Party duels.
-- Five-card opening hands, mulligans, mana progression, hero combat, and a seven-unit battlefield.
-- Shield, Lifesteal, Poisonous, Rush, Taunt, Stealth, Deploy, and Deathrattle effects.
-- An alternate Nex victory condition built around the four God Wars Dungeon generals.
-- Drag-to-play cards, target prompts, card art, tooltips, and match result overlays.
+| | Feature |
+|---|---|
+| **Build** | Search and filter the full catalog, inspect card rules, shape a mana curve, and save incomplete drafts. |
+| **Start immediately** | Three complete starter decks remain playable without collection ownership while unchanged. |
+| **Battle locally** | Use your selected deck against a starter deck in a two-player hot-seat match. |
+| **Challenge friends** | Invite another member of your RuneLite Party and verify the shared security code before playing. |
+| **Follow the battle** | Open a compact in-board log for turns, summons, attacks, damage, defeated units, and results. |
+| **Play distinct strategies** | Shield, Lifesteal, Poisonous, Rush, Taunt, Stealth, Deploy, Deathrattle, temporary mana, and Nex's alternate victory condition are supported. |
 
-## Getting Started
+## Quick Start
 
-1. Open **OSRS TCG Battles** from the RuneLite sidebar.
-2. Select one of the built-in starter decks or open the deck builder to create your own.
-3. Choose **Local Battle** for a hot-seat game on one client.
-4. To challenge a friend, join the same RuneLite Party, select a valid deck, and send an invitation from the Battles panel.
-5. Compare the displayed security code before both players confirm the duel.
+1. Use the **OSRS TCG** plugin to open card packs and begin building your collection.
+2. Open **OSRS TCG Battles** from the RuneLite sidebar.
+3. Open **Deck Builder** and create a custom 30-card deck from your collection, or select a built-in starter.
+4. Press **Use Starter** or **Save and Use** when the deck reports that it is ready.
+5. Choose **Local Battle** to play on one client, or invite a member of your RuneLite Party to a friend duel.
 
-Both players need the same current version of OSRS TCG Battles for a synchronized friend duel. Ruleset and catalog checks reject incompatible clients before a match starts.
+Opening packs is the normal path for expanding custom decks. The three unchanged starter decks remain available immediately if you want to learn the battle rules first.
 
-## Decks And Ownership
+Both players need the same current plugin version for a friend duel. Catalog, ruleset, and deck-commitment checks reject incompatible clients before play begins.
 
-Custom decks contain exactly 30 cards and follow rarity-based copy limits. Card ownership is read through the OSRS TCG plugin-message API when a compatible collection plugin is active.
+## Deck Workbench
 
-The built-in Deathrattle Value, Rush Swarm, and Gielinor Bulwark starter decks can always be played in their original form. Editing a starter turns it into a custom deck, so normal ownership checks apply.
+The deck builder is organized as a card library and a deck ledger.
 
-Deck profiles are stored through RuneLite's profile-aware configuration system. The plugin does not upload deck lists to a separate service.
+- Search names, rules, tags, factions, rarities, and abilities.
+- Filter by card type, ownership, faction, and rarity.
+- Sort by mana, name, rarity, or faction.
+- Double-click a library card to add it.
+- Select a ledger row to add, remove, or clear its copies.
+- Review card count, unit and special totals, average mana, and the mana curve while editing.
+- Save incomplete or invalid decks as drafts without making them active.
+
+Deck status is shown consistently throughout the plugin:
+
+| Status | Meaning |
+|---|---|
+| **Built-in starter - ready** | The original starter definition is ownership-exempt and can be played immediately. |
+| **Ready to play** | The deck has exactly 30 legal, owned cards. |
+| **Ownership check pending** | The deck structure is valid, but collection information has not loaded. |
+| **Deck errors** | The card count, copy limits, catalog references, or ownership requirements need attention. |
+
+Unsaved edits are marked with `*`. Switching decks or closing the workbench offers **Save Draft**, **Discard**, and **Cancel** instead of silently losing changes.
+
+## Starter Decks
+
+| Starter | Style |
+|---|---|
+| **Deathrattle Value** | Generates cards, Spirits, and hero pressure when units die. |
+| **Rush Swarm** | Establishes tempo quickly with Rush units, direct damage, and low-cost support. |
+| **Gielinor Bulwark** | Uses Shield, Taunt, Lifesteal, and boosts to control the battlefield. |
+
+Built-in starters are protected templates. Use **Duplicate** to create an editable custom copy. A previously customized starter can be restored with **Reset**, but modified starters follow normal ownership rules.
+
+## Core Rules
+
+- Each deck contains exactly 30 cards.
+- Standard cards allow up to two copies; Legendary cards allow one.
+- Both players receive a five-card opening hand and may mulligan before play.
+- The first player receives the normal draw when their first turn begins.
+- Heroes begin with 20 health.
+- Maximum mana increases to 10 over the course of the match.
+- Each side can control up to seven units.
+- Ready units can be clicked or dragged onto an enemy unit or hero to attack.
+- Hands hold up to ten cards; failed draws from an empty deck cause increasing fatigue damage.
+
+### Keywords
+
+| Keyword | Effect |
+|---|---|
+| **Shield** | Prevents the next source of damage. |
+| **Lifesteal** | Damage restores that much health to the controlling hero. |
+| **Poisonous** | Any combat damage destroys the damaged unit. |
+| **Rush** | The unit may attack enemy units on the turn it is played. |
+| **Taunt** | Visible Taunt units must be attacked before other targets. |
+| **Stealth** | The unit cannot be targeted until it attacks. |
+| **Deploy** | Resolves an effect when the card is played. |
+| **Deathrattle** | Resolves an effect when the unit dies. |
+
+Nex is a special alternate win condition. If General Graardor, Commander Zilyana, Kree'arra, and K'ril Tsutsaroth are allied on your battlefield, successfully summoning Nex wins the match immediately.
+
+## Local Battles
+
+**Local Battle** uses the deck currently marked **IN USE** for Player 1. Before the match opens, choose one of the three starter decks for Player 2. The battle window changes seats between turns so the inactive player's hand is not displayed.
 
 ## Friend Duels
 
-Friend invitations and match actions use RuneLite Party messaging. Duel payloads are encrypted between the two participants, protected against replay, and verified with a short code shown to both players. Public state hashes and recovery snapshots keep both clients synchronized without revealing the opponent's hand.
+1. Join the same RuneLite Party as your opponent.
+2. Ensure your selected deck reports **Ready to play** or **Built-in starter - ready**.
+3. Choose an eligible party member and send an invitation.
+4. Compare the short security code shown to both players.
+5. Accept only when the codes match.
+
+Friend-duel payloads are encrypted between participants and protected against replay. Public state hashes, acknowledgements, retries, and recovery snapshots keep both clients synchronized without exposing the opponent's hand. A missing or unusable deck is never silently replaced.
+
+## Collection Ownership
+
+Custom-deck ownership is requested locally through the OSRS TCG plugin-message API. The collection integration distinguishes an unavailable collection from a known empty collection.
+
+Built-in starters do not require ownership while they exactly match their original definitions. Duplicating or modifying a starter creates a normal custom deck.
+
+Deck profiles are stored through RuneLite's profile-aware configuration system. Switching RuneScape profiles loads the corresponding saved decks.
 
 ## Network And Storage
 
-- No independent game server or account system is used.
-- Friend-duel traffic travels through RuneLite Party services.
-- Card ownership is requested locally through RuneLite plugin messages.
-- Card artwork may be downloaded from the image URLs contained in the bundled catalog.
-- Downloaded artwork is cached under RuneLite's `OSRS-TCG/images-v2` directory and shared with compatible TCG plugins to avoid duplicate downloads.
+- The plugin does not use an independent game server or account system.
+- Friend-duel messages travel through RuneLite Party services.
+- Card ownership is exchanged locally through RuneLite plugin messages.
+- Card artwork may be downloaded from URLs included in the bundled catalog.
+- Artwork is cached under RuneLite's `OSRS-TCG/images-v2` directory and shared with compatible TCG plugins to avoid duplicate downloads.
+- Deck lists are not uploaded to a separate service.
+
+## Troubleshooting
+
+**My custom deck says ownership is pending.**
+
+Ensure a compatible OSRS TCG collection plugin is active, then use **Refresh Collection** in the sidebar or deck workbench.
+
+**I cannot send or accept a friend-duel invitation.**
+
+Both players must be logged into the same RuneLite Party. Your selected deck must be ready, and both clients must use compatible catalog and ruleset versions.
+
+**Editing a starter made cards unavailable.**
+
+Use **Reset** to restore the built-in template or **Duplicate** before editing. Only the exact original starter receives the ownership exemption.
+
+**I found a problem.**
+
+Open an issue at [github.com/randytkrx/osrs-tcg-battles/issues](https://github.com/randytkrx/osrs-tcg-battles/issues) with the steps needed to reproduce it.
 
 ## Acknowledgements
 

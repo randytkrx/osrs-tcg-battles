@@ -56,6 +56,17 @@ public class StarterDeckFactoryTest
 		assertFalse(factory.isUnmodifiedStarter(new Deck(starter.getId(), "Edited", starter.getEntries())));
 	}
 
+	@Test
+	public void exposesStableProtectedStarterDefinitions()
+	{
+		List<Deck> starters = factory.createStarterDecks();
+
+		assertTrue(starters == factory.createStarterDecks());
+		assertTrue(factory.isStarterId(StarterDeckFactory.DEATHRATTLE_ID));
+		assertEquals(starters.get(0), factory.getStarter(StarterDeckFactory.DEATHRATTLE_ID));
+		assertFalse(factory.isStarterId("custom-deck"));
+	}
+
 	private int count(Deck deck, AbilityType... types)
 	{
 		int count = 0;

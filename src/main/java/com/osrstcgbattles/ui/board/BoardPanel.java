@@ -7,10 +7,10 @@ import com.osrstcgbattles.engine.BoardUnit;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.PlayerId;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.GridLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GradientPaint;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -50,6 +50,7 @@ public class BoardPanel extends JPanel
 	private String selectedAttackerId;
 	private boolean interactionPending;
 	private Consumer<String> unitClickListener = instanceId -> { };
+	private UnitDragListener unitDragListener;
 	private Runnable cancelListener = () -> { };
 	private PlayerId viewSeat;
 
@@ -145,6 +146,11 @@ public class BoardPanel extends JPanel
 		this.unitClickListener = listener == null ? instanceId -> { } : listener;
 	}
 
+	public void setUnitDragListener(UnitDragListener listener)
+	{
+		unitDragListener = listener;
+	}
+
 	/** Right-click anywhere on the board -- a band, a tile, or empty space -- cancels a selection. */
 	public void setCancelListener(Runnable listener)
 	{
@@ -160,7 +166,7 @@ public class BoardPanel extends JPanel
 
 		for (BoardUnit unit : state.getBoard().getUnits(owner))
 		{
-			Optional<BattleCard> found = catalog.findById(unit.getDefinition().getId());
+			Optional<BattleCard> found = catalog.findBoardCardById(unit.getDefinition().getId());
 			if (!found.isPresent())
 			{
 				log.warn("OSRS TCG Battles: board unit '{}' has no catalog entry, skipping tile",
@@ -178,8 +184,42 @@ public class BoardPanel extends JPanel
 			// Attached once, for the tile's whole lifetime, rather than added/removed on every
 			// highlight refresh. Every tile remains clickable so ready allies can be selected and
 			// highlighted enemies can be attacked; right-click always cancels either selection.
-			tile.addMouseListener(new MouseAdapter()
+			MouseAdapter mouse = new MouseAdapter()
 			{
+				private Point pressed;
+				private boolean dragged;
+
+				@Override
+				public void mousePressed(MouseEvent event)
+				{
+					if (owner == viewSeat && SwingUtilities.isLeftMouseButton(event))
+					{
+						pressed = event.getPoint();
+						dragged = false;
+					}
+				}
+
+				@Override
+				public void mouseDragged(MouseEvent event)
+				{
+					if (pressed == null || unitDragListener == null) return;
+					if (!dragged && pressed.distance(event.getPoint()) < 5) return;
+					dragged = true;
+					unitDragListener.onUnitDragged(instanceId, pointOnBattleSurface(tile, event.getPoint()));
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent event)
+				{
+					if (dragged && unitDragListener != null)
+					{
+						Point drop = pointOnBattleSurface(tile, event.getPoint());
+						UnitDragListener listener = unitDragListener;
+						SwingUtilities.invokeLater(() -> listener.onUnitDropped(instanceId, drop));
+					}
+					pressed = null;
+				}
+
 				@Override
 				public void mouseClicked(MouseEvent e)
 				{
@@ -187,12 +227,14 @@ public class BoardPanel extends JPanel
 					{
 						cancelListener.run();
 					}
-					else
+					else if (!dragged)
 					{
 						unitClickListener.accept(instanceId);
 					}
 				}
-			});
+			};
+			tile.addMouseListener(mouse);
+			tile.addMouseMotionListener(mouse);
 			band.add(tile);
 		}
 
@@ -223,6 +265,29 @@ public class BoardPanel extends JPanel
 			}
 		}
 		return ids;
+	}
+
+	String unitAt(Point point)
+	{
+		if (point == null) return null;
+		for (String instanceId : tilesByInstanceId.keySet())
+		{
+			Rectangle bounds = tileBoundsOnBoard(instanceId);
+			if (bounds != null && bounds.contains(point)) return instanceId;
+		}
+		return null;
+	}
+
+	private Point pointOnBattleSurface(CardTile tile, Point point)
+	{
+		return getParent() == null ? new Point(point) : SwingUtilities.convertPoint(tile, point, getParent());
+	}
+
+	interface UnitDragListener
+	{
+		void onUnitDragged(String instanceId, Point battleSurfacePoint);
+
+		void onUnitDropped(String instanceId, Point battleSurfacePoint);
 	}
 
 	private void applyTargetableHighlighting()
@@ -266,9 +331,6 @@ public class BoardPanel extends JPanel
 				continue;
 			}
 			Rectangle bounds = band.getBounds();
-			graphics.setPaint(new GradientPaint(bounds.x, bounds.y, BoardTheme.ROW_BAND_LIGHT,
-				bounds.x, bounds.y + bounds.height, BoardTheme.ROW_BAND));
-			graphics.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 14, 14);
 			graphics.setColor(player == viewSeat ? BoardTheme.GOLD : BoardTheme.TEXT_DIM);
 			graphics.drawRoundRect(bounds.x, bounds.y, bounds.width - 1, bounds.height - 1, 14, 14);
 			graphics.setFont(graphics.getFont().deriveFont(java.awt.Font.BOLD, 10f));

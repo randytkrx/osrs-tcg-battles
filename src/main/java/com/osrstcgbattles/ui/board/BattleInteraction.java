@@ -185,7 +185,7 @@ public final class BattleInteraction
 			}
 			return Optional.empty();
 		}
-		if (selectedAttackerId != null && isOwnedBy(unit, localSeat.opponent()))
+		if (selectedAttackerId != null && contains(targetableUnits(), instanceId))
 		{
 			return emit(new AttackCommand(localSeat, selectedAttackerId, instanceId));
 		}
