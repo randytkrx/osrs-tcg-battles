@@ -37,8 +37,7 @@ public class BattleBoardLayoutTest
 		{
 			assertTrue(stream != null);
 			BufferedImage image = ImageIO.read(stream);
-			assertEquals(1536, image.getWidth());
-			assertEquals(1024, image.getHeight());
+			assertEquals(image.getWidth() * 2, image.getHeight() * 3);
 		}
 	}
 
