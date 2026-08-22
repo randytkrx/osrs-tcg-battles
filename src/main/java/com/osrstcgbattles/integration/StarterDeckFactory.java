@@ -7,7 +7,7 @@ import com.osrstcgbattles.catalog.CardAbility;
 import com.osrstcgbattles.catalog.Rarity;
 import com.osrstcgbattles.deck.Deck;
 import com.osrstcgbattles.deck.DeckEntry;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -136,7 +136,7 @@ public final class StarterDeckFactory
 
 		private void add(Predicate<BattleCard> predicate, int requested)
 		{
-			int target = Math.min(GwentEngine.DECK_SIZE, size + requested);
+			int target = Math.min(DuelscapeEngine.DECK_SIZE, size + requested);
 			for (BattleCard card : cards)
 			{
 				if (size >= target) break;
@@ -154,8 +154,8 @@ public final class StarterDeckFactory
 
 		private Deck finish()
 		{
-			add(card -> !card.getId().equals("asgarnia-nex"), GwentEngine.DECK_SIZE - size);
-			if (size != GwentEngine.DECK_SIZE)
+			add(card -> !card.getId().equals("asgarnia-nex"), DuelscapeEngine.DECK_SIZE - size);
+			if (size != DuelscapeEngine.DECK_SIZE)
 				throw new IllegalStateException("Unable to build starter deck " + name);
 			List<DeckEntry> entries = new ArrayList<>();
 			for (Map.Entry<String, Integer> entry : quantities.entrySet())

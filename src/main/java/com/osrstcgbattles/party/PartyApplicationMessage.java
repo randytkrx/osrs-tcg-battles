@@ -32,8 +32,7 @@ public final class PartyApplicationMessage
 	static boolean isAllowedType(BattlePartyMessageType type)
 	{
 		return type == BattlePartyMessageType.ACTION || type == BattlePartyMessageType.ACTION_ACK
-			|| type == BattlePartyMessageType.SNAPSHOT_REQUEST || type == BattlePartyMessageType.SNAPSHOT
-			|| type == BattlePartyMessageType.RESUME || type == BattlePartyMessageType.CONCEDE;
+			|| type == BattlePartyMessageType.SNAPSHOT;
 	}
 
 	public BattlePartyMessageType getType() { return type; }

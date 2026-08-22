@@ -2,7 +2,7 @@ package com.osrstcgbattles.ui.board;
 
 import com.osrstcgbattles.catalog.Faction;
 import com.osrstcgbattles.catalog.Rarity;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.PlayerId;
 import java.awt.Color;
 import java.util.EnumMap;
@@ -33,13 +33,13 @@ public final class BoardTheme
 
 	/**
 	 * The board's own required width: a fully-occupied battlefield
-	 * ({@link GwentEngine#BATTLEFIELD_LIMIT} units) laid out side by side. This uses the theoretical maximum
+	 * ({@link DuelscapeEngine#BATTLEFIELD_LIMIT} units) laid out side by side. This uses the theoretical maximum
 	 * rather than however many units happen to be on the board, so the reported size never depends on match
 	 * state -- it can never need to grow or shrink out from under the player mid-match. A
 	 * lightly-occupied battlefield is simply centered in the same space a full one would use.
 	 */
-	public static final int BOARD_WIDTH = CARD_WIDTH * GwentEngine.BATTLEFIELD_LIMIT
-		+ ROW_GAP * (GwentEngine.BATTLEFIELD_LIMIT - 1);
+	public static final int BOARD_WIDTH = CARD_WIDTH * DuelscapeEngine.BATTLEFIELD_LIMIT
+		+ ROW_GAP * (DuelscapeEngine.BATTLEFIELD_LIMIT - 1);
 
 	public static final Color BACKGROUND = new Color(18, 15, 12);
 	public static final Color ROW_BAND = new Color(31, 26, 21);

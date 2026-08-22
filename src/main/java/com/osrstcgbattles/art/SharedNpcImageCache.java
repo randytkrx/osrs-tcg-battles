@@ -61,7 +61,7 @@ public final class SharedNpcImageCache
 	private static final int MEMORY_ENTRIES = 128;
 	private static final int MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024;
 	private static final int MAX_EDGE = 130;
-	private static final String USER_AGENT = "osrs-tcg-battles (shared OSRS-TCG image cache)";
+	private static final String USER_AGENT = "duelscape-tcg (shared OSRS-TCG image cache)";
 
 	private final OkHttpClient httpClient;
 	private final Supplier<ExecutorService> executorFactory;
@@ -83,7 +83,7 @@ public final class SharedNpcImageCache
 	{
 		this(httpClient, () -> Executors.newFixedThreadPool(4, runnable ->
 		{
-			Thread thread = new Thread(runnable, "osrs-tcg-battles-npc-image");
+			Thread thread = new Thread(runnable, "duelscape-tcg-npc-image");
 			thread.setDaemon(true);
 			return thread;
 		}));
@@ -226,7 +226,7 @@ public final class SharedNpcImageCache
 		}
 		catch (Exception ex)
 		{
-			log.debug("OSRS TCG Battles: unable to load shared NPC image", ex);
+			log.debug("Duelscape TCG: unable to load shared NPC image", ex);
 			return null;
 		}
 	}
@@ -262,7 +262,7 @@ public final class SharedNpcImageCache
 		}
 		catch (IOException ex)
 		{
-			log.debug("OSRS TCG Battles: unable to read OSRS TCG image cache", ex);
+			log.debug("Duelscape TCG: unable to read OSRS TCG image cache", ex);
 			return null;
 		}
 	}
@@ -281,7 +281,7 @@ public final class SharedNpcImageCache
 		}
 		catch (IOException ex)
 		{
-			log.debug("OSRS TCG Battles: unable to update OSRS TCG image cache", ex);
+			log.debug("Duelscape TCG: unable to update OSRS TCG image cache", ex);
 		}
 		finally
 		{

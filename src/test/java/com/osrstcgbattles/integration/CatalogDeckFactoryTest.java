@@ -103,6 +103,6 @@ public class CatalogDeckFactoryTest
 				.append("\"tags\":[],\"rulesText\":\"None\",\"abilities\":[{\"type\":\"VANILLA\"}]}");
 		}
 		return new BattleCardCatalogLoader(new Gson()).load(new StringReader(
-			"{\"catalogVersion\":2,\"rulesetVersion\":7,\"cards\":[" + cards + "]}"));
+			"{\"catalogVersion\":2,\"rulesetVersion\":8,\"cards\":[" + cards + "]}"));
 	}
 }

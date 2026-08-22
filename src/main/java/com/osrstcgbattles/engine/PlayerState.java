@@ -8,6 +8,7 @@ public final class PlayerState
 {
 	private final int heroHealth;
 	private final int mana;
+	private final int temporaryMana;
 	private final int maximumMana;
 	private final int fatigue;
 	private final int turnsStarted;
@@ -21,8 +22,17 @@ public final class PlayerState
 		List<? extends Card> hand, List<? extends Card> drawPile, List<? extends Card> graveyard,
 		int remainingMulligans, boolean mulliganFinished)
 	{
+		this(heroHealth, mana, 0, maximumMana, fatigue, turnsStarted, hand, drawPile, graveyard,
+			remainingMulligans, mulliganFinished);
+	}
+
+	private PlayerState(int heroHealth, int mana, int temporaryMana, int maximumMana, int fatigue, int turnsStarted,
+		List<? extends Card> hand, List<? extends Card> drawPile, List<? extends Card> graveyard,
+		int remainingMulligans, boolean mulliganFinished)
+	{
 		this.heroHealth = heroHealth;
 		this.mana = mana;
+		this.temporaryMana = temporaryMana;
 		this.maximumMana = maximumMana;
 		this.fatigue = fatigue;
 		this.turnsStarted = turnsStarted;
@@ -39,7 +49,8 @@ public final class PlayerState
 	}
 
 	public int getHeroHealth() { return heroHealth; }
-	public int getMana() { return mana; }
+	public int getMana() { return mana + temporaryMana; }
+	public int getTemporaryMana() { return temporaryMana; }
 	public int getMaximumMana() { return maximumMana; }
 	public int getFatigue() { return fatigue; }
 	public int getTurnsStarted() { return turnsStarted; }
@@ -59,25 +70,34 @@ public final class PlayerState
 
 	PlayerState spendMana(int amount)
 	{
-		return copy(heroHealth, mana - amount, maximumMana, fatigue, turnsStarted,
+		int spentTemporary = Math.min(amount, temporaryMana);
+		return copy(heroHealth, mana - (amount - spentTemporary), temporaryMana - spentTemporary, maximumMana,
+			fatigue, turnsStarted,
 			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 	}
 
-	PlayerState gainMana(int amount)
+	PlayerState gainTemporaryMana(int amount)
 	{
-		return copy(heroHealth, Math.min(GwentEngine.MAXIMUM_MANA, mana + amount), maximumMana, fatigue,
+		int gained = Math.min(amount, DuelscapeEngine.MAXIMUM_MANA - getMana());
+		return copy(heroHealth, mana, temporaryMana + gained, maximumMana, fatigue,
 			turnsStarted, hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
+	}
+
+	PlayerState clearTemporaryMana()
+	{
+		return copy(heroHealth, mana, 0, maximumMana, fatigue, turnsStarted,
+			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 	}
 
 	PlayerState damageHero(int amount)
 	{
-		return copy(Math.max(0, heroHealth - amount), mana, maximumMana, fatigue, turnsStarted,
+		return copy(Math.max(0, heroHealth - amount), mana, temporaryMana, maximumMana, fatigue, turnsStarted,
 			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 	}
 
 	PlayerState healHero(int amount)
 	{
-		return copy(Math.min(GwentEngine.HERO_HEALTH, heroHealth + amount), mana, maximumMana, fatigue, turnsStarted,
+		return copy(Math.min(DuelscapeEngine.HERO_HEALTH, heroHealth + amount), mana, temporaryMana, maximumMana, fatigue, turnsStarted,
 			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 	}
 
@@ -85,7 +105,7 @@ public final class PlayerState
 	{
 		List<Card> nextHand = new ArrayList<>(hand);
 		nextHand.remove(index);
-		return copy(heroHealth, mana, maximumMana, fatigue, turnsStarted,
+		return copy(heroHealth, mana, temporaryMana, maximumMana, fatigue, turnsStarted,
 			nextHand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 	}
 
@@ -93,14 +113,14 @@ public final class PlayerState
 	{
 		List<Card> nextGraveyard = new ArrayList<>(graveyard);
 		nextGraveyard.add(card);
-		return copy(heroHealth, mana, maximumMana, fatigue, turnsStarted,
+		return copy(heroHealth, mana, temporaryMana, maximumMana, fatigue, turnsStarted,
 			hand, drawPile, nextGraveyard, remainingMulligans, mulliganFinished);
 	}
 
 	PlayerState startTurn(int handLimit)
 	{
 		int nextMaximum = turnsStarted == 0 ? maximumMana : Math.min(10, maximumMana + 1);
-		PlayerState refreshed = copy(heroHealth, nextMaximum, nextMaximum, fatigue, turnsStarted + 1,
+		PlayerState refreshed = copy(heroHealth, nextMaximum, 0, nextMaximum, fatigue, turnsStarted + 1,
 			hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 		return refreshed.drawOne(handLimit);
 	}
@@ -110,7 +130,7 @@ public final class PlayerState
 		if (drawPile.isEmpty())
 		{
 			int nextFatigue = fatigue + 1;
-			return copy(Math.max(0, heroHealth - nextFatigue), mana, maximumMana, nextFatigue, turnsStarted,
+			return copy(Math.max(0, heroHealth - nextFatigue), mana, temporaryMana, maximumMana, nextFatigue, turnsStarted,
 				hand, drawPile, graveyard, remainingMulligans, mulliganFinished);
 		}
 		Card drawn = drawPile.get(0);
@@ -119,7 +139,7 @@ public final class PlayerState
 		List<Card> nextGraveyard = new ArrayList<>(graveyard);
 		if (nextHand.size() < handLimit) nextHand.add(drawn);
 		else nextGraveyard.add(drawn);
-		return copy(heroHealth, mana, maximumMana, fatigue, turnsStarted,
+		return copy(heroHealth, mana, temporaryMana, maximumMana, fatigue, turnsStarted,
 			nextHand, nextDrawPile, nextGraveyard, remainingMulligans, mulliganFinished);
 	}
 
@@ -130,21 +150,21 @@ public final class PlayerState
 		nextHand.add(drawPile.get(0));
 		List<Card> nextDrawPile = new ArrayList<>(drawPile.subList(1, drawPile.size()));
 		nextDrawPile.add(replaced);
-		return copy(heroHealth, mana, maximumMana, fatigue, turnsStarted,
+		return copy(heroHealth, mana, temporaryMana, maximumMana, fatigue, turnsStarted,
 			nextHand, nextDrawPile, graveyard, remainingMulligans - 1, false);
 	}
 
 	PlayerState finishMulligan()
 	{
-		return copy(heroHealth, mana, maximumMana, fatigue, turnsStarted,
+		return copy(heroHealth, mana, temporaryMana, maximumMana, fatigue, turnsStarted,
 			hand, drawPile, graveyard, remainingMulligans, true);
 	}
 
-	private static PlayerState copy(int health, int mana, int maximumMana, int fatigue, int turnsStarted,
+	private static PlayerState copy(int health, int mana, int temporaryMana, int maximumMana, int fatigue, int turnsStarted,
 		List<? extends Card> hand, List<? extends Card> drawPile, List<? extends Card> graveyard,
 		int remainingMulligans, boolean mulliganFinished)
 	{
-		return new PlayerState(health, mana, maximumMana, fatigue, turnsStarted, hand, drawPile, graveyard,
+		return new PlayerState(health, mana, temporaryMana, maximumMana, fatigue, turnsStarted, hand, drawPile, graveyard,
 			remainingMulligans, mulliganFinished);
 	}
 }

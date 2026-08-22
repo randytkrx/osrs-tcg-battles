@@ -7,7 +7,7 @@ import com.osrstcgbattles.engine.Card;
 import com.osrstcgbattles.engine.AttackCommand;
 import com.osrstcgbattles.engine.CommandResult;
 import com.osrstcgbattles.engine.EndTurnCommand;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.PlayCardCommand;
 import com.osrstcgbattles.engine.PlayerId;
@@ -30,7 +30,7 @@ public class BattleBoardViewDragTest
 	@Test
 	public void draggingPlayableCardExecutesAndRebuildsHandWithoutCrashing() throws Exception
 	{
-		GwentEngine engine = new GwentEngine();
+		DuelscapeEngine engine = new DuelscapeEngine();
 		AtomicReference<MatchState> state = new AtomicReference<>(engine.newMatch(deck(), deck(), 1L));
 		BattleBoardView view = new BattleBoardView(PlayerId.PLAYER_ONE,
 			new BattleCardCatalogLoader(new Gson()).loadDefault(), new NoCardArtProvider());
@@ -67,7 +67,7 @@ public class BattleBoardViewDragTest
 	@Test
 	public void draggingReadyUnitOntoEnemyUnitAttacksAndRebuildsBoard() throws Exception
 	{
-		GwentEngine engine = new GwentEngine();
+		DuelscapeEngine engine = new DuelscapeEngine();
 		MatchState prepared = accepted(engine, engine.newMatch(deck(), deck(), 2L),
 			new PlayCardCommand(PlayerId.PLAYER_ONE, "neutral-chicken"));
 		prepared = accepted(engine, prepared, new EndTurnCommand(PlayerId.PLAYER_ONE));
@@ -91,7 +91,7 @@ public class BattleBoardViewDragTest
 	@Test
 	public void draggingReadyUnitOntoEnemyHeroAttacksHero() throws Exception
 	{
-		GwentEngine engine = new GwentEngine();
+		DuelscapeEngine engine = new DuelscapeEngine();
 		MatchState prepared = accepted(engine, engine.newMatch(deck(), deck(), 3L),
 			new PlayCardCommand(PlayerId.PLAYER_ONE, "neutral-chicken"));
 		prepared = accepted(engine, prepared, new EndTurnCommand(PlayerId.PLAYER_ONE));
@@ -112,7 +112,7 @@ public class BattleBoardViewDragTest
 		assertTrue(root.getBattleLog().text().contains("Opponent took 1 damage"));
 	}
 
-	private static BattleBoardView view(AtomicReference<MatchState> state, GwentEngine engine,
+	private static BattleBoardView view(AtomicReference<MatchState> state, DuelscapeEngine engine,
 		AtomicReference<AttackCommand> attack)
 	{
 		BattleBoardView view = new BattleBoardView(PlayerId.PLAYER_ONE,
@@ -169,7 +169,7 @@ public class BattleBoardViewDragTest
 		}
 	}
 
-	private static MatchState accepted(GwentEngine engine, MatchState state, com.osrstcgbattles.engine.Command command)
+	private static MatchState accepted(DuelscapeEngine engine, MatchState state, com.osrstcgbattles.engine.Command command)
 	{
 		CommandResult result = engine.execute(state, command);
 		assertTrue(result.isAccepted());
@@ -179,7 +179,7 @@ public class BattleBoardViewDragTest
 	private static List<Card> deck()
 	{
 		List<Card> cards = new ArrayList<>();
-		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		for (int i = 0; i < DuelscapeEngine.DECK_SIZE; i++)
 		{
 			cards.add(new UnitCard("neutral-chicken", "Chicken", 0, 1, 1));
 		}

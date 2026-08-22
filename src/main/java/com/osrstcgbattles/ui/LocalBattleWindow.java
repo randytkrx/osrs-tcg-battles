@@ -5,7 +5,7 @@ import com.osrstcgbattles.catalog.BattleCardCatalog;
 import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.CommandResult;
 import com.osrstcgbattles.engine.ConcedeCommand;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
 import com.osrstcgbattles.engine.PlayerId;
@@ -36,7 +36,7 @@ public final class LocalBattleWindow
 	private static final int MIN_WIDTH = 760;
 	private static final int MIN_HEIGHT = 560;
 
-	private final GwentEngine engine;
+	private final DuelscapeEngine engine;
 	private MatchState state;
 	private final Map<PlayerId, BattleBoardView> views = new EnumMap<>(PlayerId.class);
 	private JFrame frame;
@@ -45,7 +45,7 @@ public final class LocalBattleWindow
 	private PlayerId shownSeat = PlayerId.PLAYER_ONE;
 	private boolean concedeConfirmationOpen;
 
-	public LocalBattleWindow(GwentEngine engine, MatchState initialState, BattleCardCatalog catalog,
+	public LocalBattleWindow(DuelscapeEngine engine, MatchState initialState, BattleCardCatalog catalog,
 		CardArtProvider art)
 	{
 		this.engine = Objects.requireNonNull(engine, "engine");
@@ -71,7 +71,7 @@ public final class LocalBattleWindow
 
 	private void initialize(BattleCardCatalog catalog, CardArtProvider art)
 	{
-		frame = new JFrame("OSRS TCG Local Battle");
+		frame = new JFrame("Duelscape TCG Local Battle");
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
 		frame.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);

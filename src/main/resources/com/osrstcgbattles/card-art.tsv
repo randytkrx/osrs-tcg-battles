@@ -1,4 +1,4 @@
-# Card art sources for OSRS TCG Battles.
+# Card art sources for Duelscape TCG.
 # Derived from OSRS TCG resources bundled with this workspace.
 # Format: azCardName <TAB> ITEM|NPC <TAB> wikiUrlOrEmpty
 # Not part of the hashed battle catalog: art is cosmetic and must not affect duel compatibility.

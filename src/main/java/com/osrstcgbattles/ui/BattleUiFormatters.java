@@ -48,7 +48,7 @@ final class BattleUiFormatters
 	{
 		if (snapshot.getStatus() == PartyDuelSnapshot.Status.READY)
 		{
-			return "Secure friend duel active";
+			return "Encrypted friend duel active";
 		}
 		String peer = snapshot.getPeerDisplayName();
 		return peer == null || peer.isEmpty() ? snapshot.getUserStatus()

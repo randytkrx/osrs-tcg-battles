@@ -1,6 +1,6 @@
-# OSRS TCG Battles
+# Duelscape TCG
 
-Build a deck from Old School RuneScape cards and battle inside RuneLite. OSRS TCG Battles combines a 400-card collection, a tavern-style deck workbench, local hot-seat matches, and encrypted friend duels over RuneLite Party.
+Build a deck from Old School RuneScape cards and battle inside RuneLite. Duelscape TCG combines a 400-card collection, a tavern-style deck workbench, local hot-seat matches, and encrypted friend duels over RuneLite Party.
 
 ## Highlights
 
@@ -16,7 +16,7 @@ Build a deck from Old School RuneScape cards and battle inside RuneLite. OSRS TC
 ## Quick Start
 
 1. Use the **OSRS TCG** plugin to open card packs and begin building your collection.
-2. Open **OSRS TCG Battles** from the RuneLite sidebar.
+2. Open **Duelscape TCG** from the RuneLite sidebar.
 3. Open **Deck Builder** and create a custom 30-card deck from your collection, or select a built-in starter.
 4. Press **Use Starter** or **Save and Use** when the deck reports that it is ready.
 5. Choose **Local Battle** to play on one client, or invite a member of your RuneLite Party to a friend duel.
@@ -72,16 +72,9 @@ Built-in starters are protected templates. Use **Duplicate** to create an editab
 
 ### Keywords
 
-| Keyword | Effect |
-|---|---|
-| **Shield** | Prevents the next source of damage. |
-| **Lifesteal** | Damage restores that much health to the controlling hero. |
-| **Poisonous** | Any combat damage destroys the damaged unit. |
-| **Rush** | The unit may attack enemy units on the turn it is played. |
-| **Taunt** | Visible Taunt units must be attacked before other targets. |
-| **Stealth** | The unit cannot be targeted until it attacks. |
-| **Deploy** | Resolves an effect when the card is played. |
-| **Deathrattle** | Resolves an effect when the unit dies. |
+![Shield, Lifesteal, Poisonous, Rush, Taunt, Stealth, Deploy, and Deathrattle cards rendered in the battle UI](docs/images/keyword-showcase.png)
+
+Keyword badges and card rules show how each unit changes combat. Shield, Lifesteal, Poisonous, Rush, Taunt, Stealth, Deploy, and Deathrattle are supported throughout local and friend battles.
 
 Nex is a special alternate win condition. If General Graardor, Commander Zilyana, Kree'arra, and K'ril Tsutsaroth are allied on your battlefield, successfully summoning Nex wins the match immediately.
 
@@ -97,7 +90,7 @@ Nex is a special alternate win condition. If General Graardor, Commander Zilyana
 4. Compare the short security code shown to both players.
 5. Accept only when the codes match.
 
-Friend-duel payloads are encrypted between participants and protected against replay. Public state hashes, acknowledgements, retries, and recovery snapshots keep both clients synchronized without exposing the opponent's hand. A missing or unusable deck is never silently replaced.
+Friend-duel payloads are encrypted between participants and protected against replay. Encryption protects the Party traffic from observers; it does not hide game data from the opponent's client. Hand concealment is visual only: both clients reconstruct the deterministic match state, so fair play relies on an honest, unmodified opponent client. Setup `SNAPSHOT` messages exchange committed deck and seed data; during live play, revision numbers, state hashes, acknowledgements, and bounded retransmission keep both clients in lockstep. Live state recovery is not implemented, so a mismatch or exhausted retry budget aborts the match. A missing or unusable deck is never silently replaced.
 
 ## Collection Ownership
 
@@ -136,4 +129,4 @@ Open an issue at [github.com/randytkrx/osrs-tcg-battles/issues](https://github.c
 
 ## Acknowledgements
 
-OSRS TCG Battles is an independent community plugin. Old School RuneScape and RuneScape are trademarks of Jagex Ltd. Card collection integration and image-cache compatibility build on the work of the OSRS TCG community; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution.
+Duelscape TCG is an independent community plugin. Old School RuneScape and RuneScape are trademarks of Jagex Ltd. Card collection integration and image-cache compatibility build on the work of the OSRS TCG community; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution.

@@ -11,10 +11,10 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 
-/** Deterministic, immutable Hearthstone-lite rules engine. */
-public final class GwentEngine
+/** Deterministic, immutable Duelscape Engine rules implementation. */
+public final class DuelscapeEngine
 {
-	public static final int RULESET_VERSION = 7;
+	public static final int RULESET_VERSION = 8;
 	public static final int HERO_HEALTH = 20;
 	public static final int DECK_SIZE = 30;
 	public static final int OPENING_HAND_SIZE = 5;
@@ -148,7 +148,7 @@ public final class GwentEngine
 		{
 			if (effect.getType() == DeployEffect.Type.MANA)
 			{
-				players.put(command.getPlayer(), players.get(command.getPlayer()).gainMana(effect.getAmount()));
+				players.put(command.getPlayer(), players.get(command.getPlayer()).gainTemporaryMana(effect.getAmount()));
 				continue;
 			}
 			String targetId = effect.getTarget() == DeployEffect.Target.SELF
@@ -221,8 +221,11 @@ public final class GwentEngine
 	private CommandResult endTurn(MatchState state)
 	{
 		PlayerId next = state.getActivePlayer().get().opponent();
+		Map<PlayerId, PlayerState> players = copyPlayers(state);
+		PlayerId ending = state.getActivePlayer().get();
+		players.put(ending, players.get(ending).clearTemporaryMana());
 		MatchState advanced = new MatchState(state.getTurnNumber() + 1, state.getStartingPlayer(), next,
-			MatchStatus.ACTIVE, MatchPhase.PLAY, null, copyPlayers(state), state.getBoard(),
+			MatchStatus.ACTIVE, MatchPhase.PLAY, null, players, state.getBoard(),
 			state.getNextUnitInstanceId());
 		return accept(startTurn(advanced, next, true));
 	}
@@ -358,8 +361,14 @@ public final class GwentEngine
 	private static MatchState completeIfDead(MatchState source, Map<PlayerId, PlayerState> players,
 		BoardState board, long nextId)
 	{
-		PlayerId dead = players.get(PlayerId.PLAYER_ONE).getHeroHealth() <= 0 ? PlayerId.PLAYER_ONE
-			: players.get(PlayerId.PLAYER_TWO).getHeroHealth() <= 0 ? PlayerId.PLAYER_TWO : null;
+		boolean firstDead = players.get(PlayerId.PLAYER_ONE).getHeroHealth() <= 0;
+		boolean secondDead = players.get(PlayerId.PLAYER_TWO).getHeroHealth() <= 0;
+		PlayerId dead = firstDead == secondDead ? null : firstDead ? PlayerId.PLAYER_ONE : PlayerId.PLAYER_TWO;
+		if (firstDead && secondDead)
+		{
+			return new MatchState(source.getTurnNumber(), source.getStartingPlayer(), null, MatchStatus.COMPLETE,
+				MatchPhase.COMPLETE, null, players, board, nextId);
+		}
 		if (dead == null)
 		{
 			return new MatchState(source.getTurnNumber(), source.getStartingPlayer(),

@@ -1,6 +1,7 @@
 package com.osrstcgbattles.catalog;
 
 import com.google.gson.Gson;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import java.io.StringReader;
 import java.util.EnumSet;
 import org.junit.Test;
@@ -59,6 +60,16 @@ public class BattleCardCatalogLoaderTest
 	}
 
 	@Test
+	public void defaultCatalogMatchesLoaderAndEngineRulesetVersions()
+	{
+		BattleCardCatalog catalog = new BattleCardCatalogLoader(new Gson()).loadDefault();
+
+		assertEquals(BattleCardCatalogLoader.SUPPORTED_CATALOG_VERSION, catalog.getCatalogVersion());
+		assertEquals(BattleCardCatalogLoader.SUPPORTED_RULESET_VERSION, catalog.getRulesetVersion());
+		assertEquals(DuelscapeEngine.RULESET_VERSION, catalog.getRulesetVersion());
+	}
+
+	@Test
 	public void expandedCatalogContainsEverySupportedArchetype()
 	{
 		BattleCardCatalog catalog = new BattleCardCatalogLoader(new Gson()).loadDefault();
@@ -72,7 +83,7 @@ public class BattleCardCatalogLoaderTest
 
 	private static BattleCardCatalog load(String abilities)
 	{
-		String json = "{\"catalogVersion\":2,\"rulesetVersion\":7,\"cards\":[{"
+		String json = "{\"catalogVersion\":2,\"rulesetVersion\":8,\"cards\":[{"
 			+ "\"id\":\"test-card\",\"azCardName\":\"Test Card\",\"displayName\":\"Test Card\","
 			+ "\"category\":\"UNIT\",\"faction\":\"NEUTRAL\",\"rarity\":\"COMMON\","
 			+ "\"manaCost\":1,\"attack\":1,\"health\":1,\"tags\":[],\"rulesText\":\"Test\","

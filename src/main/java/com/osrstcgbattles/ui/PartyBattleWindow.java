@@ -139,7 +139,7 @@ public final class PartyBattleWindow
 
 	private void initialize(BattleCardCatalog catalog, CardArtProvider art)
 	{
-		frame = new JFrame("OSRS TCG Friend Duel");
+		frame = new JFrame("Duelscape TCG Friend Duel");
 		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		frame.setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
 		frame.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -294,14 +294,12 @@ public final class PartyBattleWindow
 	}
 
 	/**
-	 * The canonical statement of the hidden-hand rule for a party match: a local seat's visible
+	 * Presentation-layer hand concealment for a party match: a local seat's visible
 	 * hand is exactly {@code state.getPlayer(localSeat).getHand()}, nothing from the peer seat.
 	 * Production code no longer calls this -- {@link BattleBoardView#setState} is handed the full
 	 * {@link MatchState} and its own {@code refreshHand()} reads {@code state.getPlayer(localSeat)}
-	 * directly, and that path has been traced end-to-end to confirm no opponent {@link Card} ever
-	 * reaches a rendered tile. This method is kept anyway because {@code visibleHandContainsOnlyLocalCards}
-	 * is the regression guard for the rule itself; deleting the method would delete that guard along
-	 * with it.
+	 * directly, so no opponent {@link Card} reaches a rendered tile. Both peers still hold the full
+	 * deterministic state; this method protects the UI, not against a modified opponent client.
 	 */
 	static List<Card> visibleHand(MatchState state, PlayerId localSeat)
 	{

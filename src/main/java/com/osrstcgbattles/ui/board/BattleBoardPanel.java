@@ -153,18 +153,18 @@ public final class BattleBoardPanel extends JLayeredPane
 		{
 			if (stream == null)
 			{
-				throw new IllegalStateException("Missing OSRS TCG battle-board background");
+				throw new IllegalStateException("Missing Duelscape TCG battle-board background");
 			}
 			BufferedImage image = javax.imageio.ImageIO.read(stream);
 			if (image == null)
 			{
-				throw new IllegalStateException("Invalid OSRS TCG battle-board background");
+				throw new IllegalStateException("Invalid Duelscape TCG battle-board background");
 			}
 			return image;
 		}
 		catch (IOException exception)
 		{
-			throw new IllegalStateException("Unable to load OSRS TCG battle-board background", exception);
+			throw new IllegalStateException("Unable to load Duelscape TCG battle-board background", exception);
 		}
 	}
 

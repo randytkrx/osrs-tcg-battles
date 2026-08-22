@@ -1,7 +1,7 @@
 package com.osrstcgbattles.party;
 
 import com.google.gson.Gson;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
@@ -163,6 +163,7 @@ public final class BattlePartyCoordinator
 		PartySessionStateMachine.Result accepted = session.machine.acceptIncoming(senderMemberId, message);
 		if (accepted == PartySessionStateMachine.Result.DUPLICATE)
 		{
+			acknowledgeApplications(message.getAckSequence());
 			List<BattlePartyEnvelope> response = cachedResponses.get(message.getMessageId());
 			if (response != null) outbound.addAll(response);
 			return ReceiveResult.DUPLICATE;
@@ -180,6 +181,7 @@ public final class BattlePartyCoordinator
 			return ReceiveResult.REJECTED;
 		}
 
+		acknowledgeApplications(message.getAckSequence());
 		session.lastProgressNanos = nowNanos;
 		session.lastHandshakeOutbound = null;
 		session.handshakeRetries = 0;
@@ -259,6 +261,16 @@ public final class BattlePartyCoordinator
 			|| session.sessionKey == null)
 			throw new IllegalStateException("application transport is not ready");
 		String plaintext = codec.encodeMap(Objects.requireNonNull(payload, "payload"));
+		for (PendingApplication pending : session.pendingApplications.values())
+		{
+			if (pending.type == type && pending.plaintext.equals(plaintext))
+			{
+				queuePendingApplications();
+				return;
+			}
+		}
+		// Never put a later application sequence on the wire without retrying unacknowledged predecessors first.
+		queuePendingApplications();
 		BattlePartyEnvelope message = newEnvelope(type);
 		try
 		{
@@ -268,18 +280,20 @@ public final class BattlePartyCoordinator
 		{
 			throw new IllegalStateException("unable to encrypt application message", exception);
 		}
-		if (type == BattlePartyMessageType.CONCEDE)
-		{
-			outbound.add(message);
-			if (session.machine.recordLocal(type) != PartySessionStateMachine.Result.ACCEPTED)
-			{
-				outbound.remove(outbound.size() - 1);
-				throw new IllegalStateException("invalid local protocol transition");
-			}
-			finishTerminal("You conceded the duel");
-			return;
-		}
 		recordAndQueue(message);
+		session.pendingApplications.put(message.getSequence(), new PendingApplication(type, plaintext, message));
+	}
+
+	private void queuePendingApplications()
+	{
+		for (PendingApplication pending : session.pendingApplications.values())
+		{
+			outbound.remove(pending.envelope);
+		}
+		for (PendingApplication pending : session.pendingApplications.values())
+		{
+			outbound.add(pending.envelope);
+		}
 	}
 
 	public PartyDuelSnapshot snapshot()
@@ -364,14 +378,9 @@ public final class BattlePartyCoordinator
 				break;
 			case ACTION:
 			case ACTION_ACK:
-			case SNAPSHOT_REQUEST:
 			case SNAPSHOT:
-			case RESUME:
-			case CONCEDE:
 				inboundApplication.add(new PartyApplicationMessage(message.getMessageType(), session.matchId,
 					session.peerMemberId, message.getSequence(), applicationPayload, codec));
-				if (message.getMessageType() == BattlePartyMessageType.CONCEDE)
-					finishTerminal("Opponent conceded the duel");
 				break;
 			default:
 				throw new IllegalArgumentException("unsupported message");
@@ -497,6 +506,11 @@ public final class BattlePartyCoordinator
 		session.handshakeRetries = 0;
 	}
 
+	private void acknowledgeApplications(long acknowledgedSequence)
+	{
+		session.pendingApplications.entrySet().removeIf(entry -> entry.getKey() <= acknowledgedSequence);
+	}
+
 	private BattlePartyEnvelope newEnvelope(BattlePartyMessageType type)
 	{
 		return new BattlePartyEnvelope(BattlePartyEnvelope.CURRENT_PROTOCOL_VERSION, UUID.randomUUID().toString(),
@@ -552,7 +566,7 @@ public final class BattlePartyCoordinator
 	private static PartyDuelMetadata requireMetadata(PartyDuelMetadata metadata)
 	{
 		if (metadata == null) throw new IllegalArgumentException("metadata is required");
-		if (metadata.getRulesetVersion() != GwentEngine.RULESET_VERSION)
+		if (metadata.getRulesetVersion() != DuelscapeEngine.RULESET_VERSION)
 			throw new IllegalArgumentException("unsupported ruleset version");
 		return metadata;
 	}
@@ -580,10 +594,7 @@ public final class BattlePartyCoordinator
 			case READY:
 			case ACTION:
 			case ACTION_ACK:
-			case SNAPSHOT_REQUEST:
 			case SNAPSHOT:
-			case RESUME:
-			case CONCEDE:
 				return encrypted && !key && message.getHandshakePublicKey() == null && message.getHandshakeSalt() == null;
 			case ABORT:
 				return !key && message.getHandshakePublicKey() == null && message.getHandshakeSalt() == null;
@@ -615,7 +626,7 @@ public final class BattlePartyCoordinator
 		if (status == PartyDuelSnapshot.Status.OUTBOUND_INVITE)
 			return session.inviteAcknowledged ? "Invitation delivered; waiting for response" : "Sending invitation";
 		if (status == PartyDuelSnapshot.Status.INBOUND_INVITE) return "Party duel invitation received";
-		if (status == PartyDuelSnapshot.Status.HANDSHAKE) return "Establishing secure party duel";
+		if (status == PartyDuelSnapshot.Status.HANDSHAKE) return "Establishing encrypted party duel";
 		if (status == PartyDuelSnapshot.Status.READY)
 			return "Verify security code with opponent: " + session.authenticationCode;
 		return "No party duel in progress";
@@ -653,6 +664,7 @@ public final class BattlePartyCoordinator
 		private BattlePartyEnvelope lastHandshakeOutbound;
 		private long lastHandshakeSendNanos;
 		private int handshakeRetries;
+		private final Map<Long, PendingApplication> pendingApplications = new LinkedHashMap<>();
 
 		private Session(String matchId, long peerMemberId, String peerDisplayName, PartyDuelMetadata localMetadata,
 			boolean outboundInvite, long startedNanos, PartySessionStateMachine machine)
@@ -666,6 +678,20 @@ public final class BattlePartyCoordinator
 			this.lastProgressNanos = startedNanos;
 			this.lastHandshakeSendNanos = startedNanos;
 			this.machine = machine;
+		}
+	}
+
+	private static final class PendingApplication
+	{
+		private final BattlePartyMessageType type;
+		private final String plaintext;
+		private final BattlePartyEnvelope envelope;
+
+		private PendingApplication(BattlePartyMessageType type, String plaintext, BattlePartyEnvelope envelope)
+		{
+			this.type = type;
+			this.plaintext = plaintext;
+			this.envelope = envelope;
 		}
 	}
 }

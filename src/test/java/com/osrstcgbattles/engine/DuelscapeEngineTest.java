@@ -2,16 +2,18 @@ package com.osrstcgbattles.engine;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class GwentEngineTest
+public class DuelscapeEngineTest
 {
-	private final GwentEngine engine = new GwentEngine();
+	private final DuelscapeEngine engine = new DuelscapeEngine();
 
 	@Test
 	public void matchStartsWithHearthstoneResources()
@@ -109,10 +111,10 @@ public class GwentEngineTest
 		PlayerState player = new PlayerState(20, 0, 1, 0, 0, Collections.emptyList(),
 			Collections.emptyList(), Collections.emptyList(), 0, true);
 
-		player = player.drawOne(GwentEngine.HAND_LIMIT);
+		player = player.drawOne(DuelscapeEngine.HAND_LIMIT);
 		assertEquals(19, player.getHeroHealth());
 		assertEquals(1, player.getFatigue());
-		player = player.drawOne(GwentEngine.HAND_LIMIT);
+		player = player.drawOne(DuelscapeEngine.HAND_LIMIT);
 		assertEquals(17, player.getHeroHealth());
 		assertEquals(2, player.getFatigue());
 	}
@@ -121,7 +123,7 @@ public class GwentEngineTest
 	public void unsupportedCardImplementationsAreRejectedAtMatchCreation()
 	{
 		List<Card> unsupported = new ArrayList<>();
-		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		for (int i = 0; i < DuelscapeEngine.DECK_SIZE; i++)
 		{
 			unsupported.add(new Card()
 			{
@@ -137,7 +139,7 @@ public class GwentEngineTest
 	public void manaEffectAddsTemporaryManaWithoutRequiringATarget()
 	{
 		List<Card> manaDeck = new ArrayList<>();
-		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		for (int i = 0; i < DuelscapeEngine.DECK_SIZE; i++)
 		{
 			manaDeck.add(new SpecialCard("lightbearer", "Lightbearer", 0, Collections.singletonList(
 				new DeployEffect(DeployEffect.Type.MANA, DeployEffect.Target.HERO, 1))));
@@ -148,8 +150,84 @@ public class GwentEngineTest
 
 		assertTrue(result.isAccepted());
 		assertEquals(2, result.getState().getPlayer(PlayerId.PLAYER_ONE).getMana());
+		assertEquals(1, result.getState().getPlayer(PlayerId.PLAYER_ONE).getTemporaryMana());
 		assertEquals(1, result.getState().getPlayer(PlayerId.PLAYER_ONE).getMaximumMana());
 		assertEquals(1, result.getState().getPlayer(PlayerId.PLAYER_ONE).getGraveyard().size());
+
+		MatchState ended = accepted(result.getState(), new EndTurnCommand(PlayerId.PLAYER_ONE));
+		assertEquals(1, ended.getPlayer(PlayerId.PLAYER_ONE).getMana());
+		assertEquals(0, ended.getPlayer(PlayerId.PLAYER_ONE).getTemporaryMana());
+	}
+
+	@Test
+	public void spendingManaConsumesTemporaryManaBeforePermanentMana()
+	{
+		PlayerState spent = player(2, Collections.emptyList(), Collections.emptyList())
+			.gainTemporaryMana(2).spendMana(1);
+
+		assertEquals(3, spent.getMana());
+		assertEquals(1, spent.getTemporaryMana());
+		assertEquals(2, spent.getMana() - spent.getTemporaryMana());
+	}
+
+	@Test
+	public void stateHashesDistinguishTemporaryFromPermanentMana()
+	{
+		PlayerState permanent = player(2, Collections.emptyList(), Collections.emptyList());
+		PlayerState temporary = player(1, Collections.emptyList(), Collections.emptyList()).gainTemporaryMana(1);
+		assertEquals(permanent.getMana(), temporary.getMana());
+
+		MatchState permanentState = state(permanent, BoardState.empty());
+		MatchState temporaryState = state(temporary, BoardState.empty());
+
+		assertFalse(permanentState.getPublicStateHash().equals(temporaryState.getPublicStateHash()));
+		assertFalse(permanentState.getSynchronizationStateHash().equals(
+			temporaryState.getSynchronizationStateHash()));
+	}
+
+	@Test
+	public void deployBoostAndDamageEffectsResolveOnTheirTargets()
+	{
+		UnitCard booster = new UnitCard("booster", "Booster", 0, 2, 3, Collections.singletonList(
+			new DeployEffect(DeployEffect.Type.BOOST, DeployEffect.Target.SELF, 2)));
+		MatchState boosted = accepted(state(player(1, Collections.singletonList(booster), Collections.emptyList()),
+			BoardState.empty()), new PlayCardCommand(PlayerId.PLAYER_ONE, "booster"));
+		assertEquals(4, boosted.getBoard().find("unit-1").getCurrentAttack());
+		assertEquals(5, boosted.getBoard().find("unit-1").getCurrentHealth());
+
+		SpecialCard strike = new SpecialCard("strike", "Strike", 0, Collections.singletonList(
+			new DeployEffect(DeployEffect.Type.DAMAGE, DeployEffect.Target.ENEMY_UNIT, 2)));
+		BoardState enemyBoard = BoardState.empty().add(PlayerId.PLAYER_TWO,
+			BoardUnit.deploy("enemy", new UnitCard("enemy", "Enemy", 0, 1, 4)));
+		MatchState damaged = accepted(state(player(1, Collections.singletonList(strike), Collections.emptyList()),
+			enemyBoard), new PlayCardCommand(PlayerId.PLAYER_ONE, "strike", "enemy"));
+		assertEquals(2, damaged.getBoard().find("enemy").getCurrentHealth());
+	}
+
+	@Test
+	public void handAndBattlefieldCapsAreEnforced()
+	{
+		List<Card> fullHand = new ArrayList<>();
+		for (int i = 0; i < DuelscapeEngine.HAND_LIMIT; i++) fullHand.add(new UnitCard("hand-" + i, "Hand", 0, 1, 1));
+		PlayerState drawn = player(1, fullHand,
+			Collections.singletonList(new UnitCard("overflow", "Overflow", 0, 1, 1))).drawOne(DuelscapeEngine.HAND_LIMIT);
+		assertEquals(DuelscapeEngine.HAND_LIMIT, drawn.getHand().size());
+		assertTrue(drawn.getDrawPile().isEmpty());
+		assertEquals("overflow", drawn.getGraveyard().get(0).getId());
+
+		BoardState fullBoard = BoardState.empty();
+		for (int i = 0; i < DuelscapeEngine.BATTLEFIELD_LIMIT; i++)
+		{
+			fullBoard = fullBoard.add(PlayerId.PLAYER_ONE,
+				BoardUnit.deploy("unit-" + i, new UnitCard("board-" + i, "Board", 0, 1, 1)));
+		}
+		PlayerState withUnit = player(1,
+			Collections.singletonList(new UnitCard("extra", "Extra", 0, 1, 1)), Collections.emptyList());
+		CommandResult rejected = engine.execute(state(withUnit, fullBoard),
+			new PlayCardCommand(PlayerId.PLAYER_ONE, "extra"));
+		assertFalse(rejected.isAccepted());
+		assertEquals(RejectionReason.BATTLEFIELD_FULL, rejected.getRejectionReason().get());
+		assertEquals(1, rejected.getState().getPlayer(PlayerId.PLAYER_ONE).getHand().size());
 	}
 
 	private MatchState newMatch()
@@ -167,10 +245,24 @@ public class GwentEngineTest
 	private static List<Card> deck(String id, int attack, int health)
 	{
 		List<Card> cards = new ArrayList<>();
-		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		for (int i = 0; i < DuelscapeEngine.DECK_SIZE; i++)
 		{
 			cards.add(new UnitCard(id, id, 0, attack, health));
 		}
 		return cards;
+	}
+
+	private static PlayerState player(int mana, List<? extends Card> hand, List<? extends Card> drawPile)
+	{
+		return new PlayerState(20, mana, 1, 0, 1, hand, drawPile, Collections.emptyList(), 0, true);
+	}
+
+	private static MatchState state(PlayerState first, BoardState board)
+	{
+		Map<PlayerId, PlayerState> players = new EnumMap<>(PlayerId.class);
+		players.put(PlayerId.PLAYER_ONE, first);
+		players.put(PlayerId.PLAYER_TWO, player(1, Collections.emptyList(), Collections.emptyList()));
+		return new MatchState(1, PlayerId.PLAYER_ONE, PlayerId.PLAYER_ONE, MatchStatus.ACTIVE,
+			MatchPhase.PLAY, null, players, board, 1L);
 	}
 }

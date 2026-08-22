@@ -169,7 +169,7 @@ public class BoardPanel extends JPanel
 			Optional<BattleCard> found = catalog.findBoardCardById(unit.getDefinition().getId());
 			if (!found.isPresent())
 			{
-				log.warn("OSRS TCG Battles: board unit '{}' has no catalog entry, skipping tile",
+				log.warn("Duelscape TCG: board unit '{}' has no catalog entry, skipping tile",
 					unit.getDefinition().getId());
 				continue;
 			}

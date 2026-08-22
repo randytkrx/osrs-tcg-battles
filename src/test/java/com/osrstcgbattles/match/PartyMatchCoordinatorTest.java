@@ -11,10 +11,13 @@ import com.osrstcgbattles.engine.ConcedeCommand;
 import com.osrstcgbattles.engine.FinishMulliganCommand;
 import com.osrstcgbattles.integration.CatalogCardLookup;
 import com.osrstcgbattles.integration.CatalogDeckFactory;
+import com.osrstcgbattles.party.BattlePartyCoordinator;
+import com.osrstcgbattles.party.BattlePartyEnvelope;
 import com.osrstcgbattles.party.BattlePartyMessageType;
 import com.osrstcgbattles.party.CanonicalPartyJsonCodec;
 import com.osrstcgbattles.party.DeckCommitment;
 import com.osrstcgbattles.party.PartyApplicationMessage;
+import com.osrstcgbattles.party.PartyDuelMetadata;
 import com.osrstcgbattles.party.PartyDuelSnapshot;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -130,6 +133,44 @@ public class PartyMatchCoordinatorTest
 		harness.assertBoth(PartyMatchSnapshot.Status.ACTIVE);
 		assertTrue(harness.firstChannel.count(BattlePartyMessageType.ACTION, null) >= 2);
 		assertTrue(harness.secondChannel.count(BattlePartyMessageType.ACTION_ACK, null) >= 3);
+	}
+
+	@Test
+	public void productionTransportRetriesDroppedActionWithoutSequenceGap()
+	{
+		ProductionHarness harness = new ProductionHarness();
+		harness.startMatch();
+		harness.dropFirstToSecond(BattlePartyMessageType.ACTION);
+
+		harness.firstMatch.submit(new FinishMulliganCommand(harness.firstMatch.snapshot().getLocalSeat()));
+		harness.pump();
+		assertEquals(0, harness.secondMatch.snapshot().getRevision());
+
+		harness.tickMatches();
+
+		harness.assertActiveAtRevision(1);
+		assertEquals(0, harness.gaps);
+	}
+
+	@Test
+	public void productionTransportSequencesAckRetryBeforeFollowingAction()
+	{
+		ProductionHarness harness = new ProductionHarness();
+		harness.startMatch();
+		harness.dropSecondToFirst(BattlePartyMessageType.ACTION_ACK);
+
+		harness.firstMatch.submit(new FinishMulliganCommand(harness.firstMatch.snapshot().getLocalSeat()));
+		harness.pump();
+		harness.secondMatch.submit(new FinishMulliganCommand(harness.secondMatch.snapshot().getLocalSeat()));
+		harness.pump();
+
+		assertEquals("the ACK retry must retain its sequence ahead of the following ACTION", 0, harness.gaps);
+		for (int i = 0; i < 5 && harness.firstMatch.snapshot().getRevision() < 2; i++)
+			harness.tickMatches();
+
+		harness.assertActiveAtRevision(2);
+		assertEquals(PartyDuelSnapshot.Status.READY, harness.firstTransport.snapshot().getStatus());
+		assertEquals(PartyDuelSnapshot.Status.READY, harness.secondTransport.snapshot().getStatus());
 	}
 
 	@Test
@@ -253,6 +294,118 @@ public class PartyMatchCoordinatorTest
 		{
 			assertEquals(status, first.snapshot().getStatus());
 			assertEquals(status, second.snapshot().getStatus());
+		}
+	}
+
+	private static final class ProductionHarness
+	{
+		private static final long FIRST = 101L;
+		private static final long SECOND = 202L;
+		private final BattleCardCatalog catalog = new BattleCardCatalogLoader(new Gson()).loadDefault();
+		private final Deck firstDeck = deck("first-production-deck", catalog);
+		private final Deck secondDeck = deck("second-production-deck", catalog);
+		private final BattlePartyCoordinator firstTransport = new BattlePartyCoordinator(FIRST, new Gson());
+		private final BattlePartyCoordinator secondTransport = new BattlePartyCoordinator(SECOND, new Gson());
+		private PartyMatchCoordinator firstMatch;
+		private PartyMatchCoordinator secondMatch;
+		private BattlePartyMessageType dropFirstToSecond;
+		private BattlePartyMessageType dropSecondToFirst;
+		private int gaps;
+
+		private ProductionHarness()
+		{
+			firstTransport.invite(SECOND, "second", metadata(firstDeck), 0L);
+			pump();
+			secondTransport.accept(metadata(secondDeck));
+			pump();
+			assertEquals(PartyDuelSnapshot.Status.READY, firstTransport.snapshot().getStatus());
+			assertEquals(PartyDuelSnapshot.Status.READY, secondTransport.snapshot().getStatus());
+
+			CatalogCardLookup lookup = new CatalogCardLookup(catalog);
+			firstMatch = new PartyMatchCoordinator(FIRST, firstTransport.snapshot(), catalog, new DeckValidator(),
+				lookup, new CatalogDeckFactory(catalog), firstDeck, this::sendFirst, 31L);
+			secondMatch = new PartyMatchCoordinator(SECOND, secondTransport.snapshot(), catalog, new DeckValidator(),
+				lookup, new CatalogDeckFactory(catalog), secondDeck, this::sendSecond, 47L);
+		}
+
+		private void startMatch()
+		{
+			firstMatch.start();
+			secondMatch.start();
+			pump();
+			assertActiveAtRevision(0);
+		}
+
+		private boolean sendFirst(BattlePartyMessageType type, Map<String, ?> payload)
+		{
+			firstTransport.sendApplication(type, payload);
+			return true;
+		}
+
+		private boolean sendSecond(BattlePartyMessageType type, Map<String, ?> payload)
+		{
+			secondTransport.sendApplication(type, payload);
+			return true;
+		}
+
+		private void dropFirstToSecond(BattlePartyMessageType type) { dropFirstToSecond = type; }
+		private void dropSecondToFirst(BattlePartyMessageType type) { dropSecondToFirst = type; }
+
+		private void tickMatches()
+		{
+			firstMatch.onTick();
+			secondMatch.onTick();
+			pump();
+		}
+
+		private void pump()
+		{
+			boolean progressed;
+			do
+			{
+				progressed = transfer(firstTransport, FIRST, secondTransport, true);
+				progressed |= transfer(secondTransport, SECOND, firstTransport, false);
+			} while (progressed);
+		}
+
+		private boolean transfer(BattlePartyCoordinator source, long sourceId,
+			BattlePartyCoordinator target, boolean firstToSecond)
+		{
+			List<BattlePartyEnvelope> envelopes = source.drainOutbound();
+			if (envelopes.isEmpty()) return false;
+			for (BattlePartyEnvelope envelope : envelopes)
+			{
+				BattlePartyMessageType dropped = firstToSecond ? dropFirstToSecond : dropSecondToFirst;
+				if (envelope.getMessageType() == dropped)
+				{
+					if (firstToSecond) dropFirstToSecond = null; else dropSecondToFirst = null;
+					continue;
+				}
+				BattlePartyCoordinator.ReceiveResult result = target.receive(sourceId, "peer", true, envelope, 1L);
+				if (result == BattlePartyCoordinator.ReceiveResult.GAP) gaps++;
+				dispatch(target, firstToSecond ? secondMatch : firstMatch);
+			}
+			return true;
+		}
+
+		private static void dispatch(BattlePartyCoordinator transport, PartyMatchCoordinator match)
+		{
+			List<PartyApplicationMessage> messages = transport.drainInboundApplication();
+			if (match != null) for (PartyApplicationMessage message : messages) match.receive(message);
+		}
+
+		private PartyDuelMetadata metadata(Deck deck)
+		{
+			return new PartyDuelMetadata(catalog.getSha256(), catalog.getRulesetVersion(), deck.getId(),
+				DeckCommitment.compute(catalog.getSha256(), catalog.getRulesetVersion(), deck));
+		}
+
+		private void assertActiveAtRevision(long revision)
+		{
+			assertEquals(PartyMatchSnapshot.Status.ACTIVE, firstMatch.snapshot().getStatus());
+			assertEquals(PartyMatchSnapshot.Status.ACTIVE, secondMatch.snapshot().getStatus());
+			assertEquals(revision, firstMatch.snapshot().getRevision());
+			assertEquals(revision, secondMatch.snapshot().getRevision());
 		}
 	}
 

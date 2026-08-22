@@ -133,7 +133,7 @@ public final class DeckBuilderWindow
 
 	private void initialize()
 	{
-		frame = new JFrame("OSRS TCG Deck Workbench");
+		frame = new JFrame("Duelscape TCG Deck Workbench");
 		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		frame.setMinimumSize(new Dimension(820, 560));
 		frame.setSize(1080, 700);
@@ -788,7 +788,7 @@ public final class DeckBuilderWindow
 		useButton.setEnabled(readiness.isPlayable());
 		useButton.setText(readOnly ? "Use Starter" : "Save and Use");
 		updateDeckQuantityControls();
-		frame.setTitle("OSRS TCG Deck Workbench" + (isDirty() ? " *" : ""));
+		frame.setTitle("Duelscape TCG Deck Workbench" + (isDirty() ? " *" : ""));
 	}
 
 	private void setErrors(DeckReadiness readiness)

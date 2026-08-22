@@ -8,7 +8,7 @@ public final class PartySessionStateMachine
 	public enum State
 	{
 		NEW, INVITE_SENT, INVITE_RECEIVED, INVITE_ACKNOWLEDGED, ACCEPTED, KEY_EXCHANGED, READY,
-		DECLINED, ABORTED, CONCEDED
+		DECLINED, ABORTED
 	}
 
 	public enum Result
@@ -109,12 +109,6 @@ public final class PartySessionStateMachine
 			state = State.ABORTED;
 			return Result.ACCEPTED;
 		}
-		if (type == BattlePartyMessageType.CONCEDE)
-		{
-			if (state != State.READY) return Result.INVALID_STATE;
-			state = State.CONCEDED;
-			return Result.ACCEPTED;
-		}
 		switch (type)
 		{
 			case INVITE:
@@ -142,9 +136,7 @@ public final class PartySessionStateMachine
 				return Result.ACCEPTED;
 			case ACTION:
 			case ACTION_ACK:
-			case SNAPSHOT_REQUEST:
 			case SNAPSHOT:
-			case RESUME:
 				return state == State.READY ? Result.ACCEPTED : Result.INVALID_STATE;
 			default:
 				return Result.INVALID_STATE;
@@ -155,6 +147,6 @@ public final class PartySessionStateMachine
 	public long getNextInboundSequence() { return nextInboundSequence; }
 	public boolean isTerminal()
 	{
-		return state == State.DECLINED || state == State.ABORTED || state == State.CONCEDED;
+		return state == State.DECLINED || state == State.ABORTED;
 	}
 }

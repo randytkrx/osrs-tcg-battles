@@ -20,8 +20,8 @@ public final class StateHasher
 		{
 			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 			DataOutputStream out = new DataOutputStream(bytes);
-			out.writeUTF(synchronization ? "osrs-tcg-hearthstone-lite-sync-v2"
-				: "osrs-tcg-hearthstone-lite-public-v2");
+			out.writeUTF(synchronization ? "osrs-tcg-hearthstone-lite-sync-v3"
+				: "osrs-tcg-hearthstone-lite-public-v3");
 			writePublicState(out, state);
 			if (synchronization)
 			{
@@ -42,7 +42,7 @@ public final class StateHasher
 
 	private static void writePublicState(DataOutputStream out, MatchState state) throws IOException
 	{
-		out.writeInt(GwentEngine.RULESET_VERSION);
+		out.writeInt(DuelscapeEngine.RULESET_VERSION);
 		out.writeInt(state.getTurnNumber());
 		out.writeUTF(state.getStartingPlayer().name());
 		out.writeUTF(state.getStatus().name());
@@ -56,6 +56,7 @@ public final class StateHasher
 			out.writeUTF(player.name());
 			out.writeInt(value.getHeroHealth());
 			out.writeInt(value.getMana());
+			out.writeInt(value.getTemporaryMana());
 			out.writeInt(value.getMaximumMana());
 			out.writeInt(value.getFatigue());
 			out.writeInt(value.getTurnsStarted());

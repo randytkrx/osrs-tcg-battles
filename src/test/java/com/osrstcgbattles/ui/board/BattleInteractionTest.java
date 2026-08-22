@@ -6,13 +6,15 @@ import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.CommandResult;
 import com.osrstcgbattles.engine.DeployEffect;
 import com.osrstcgbattles.engine.EndTurnCommand;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.PlayCardCommand;
 import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.UnitCard;
+import com.osrstcgbattles.engine.UnitKeyword;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import org.junit.Test;
 
@@ -22,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 public class BattleInteractionTest
 {
-	private final GwentEngine engine = new GwentEngine();
+	private final DuelscapeEngine engine = new DuelscapeEngine();
 
 	@Test
 	public void targetlessCardPlaysDirectly()
@@ -116,6 +118,20 @@ public class BattleInteractionTest
 		assertEquals("Select an enemy unit for 3 damage", interaction.targetPrompt().get());
 	}
 
+	@Test
+	public void enemyTargetedCardIsNotPlayableWhenEveryEnemyIsStealthed()
+	{
+		MatchState state = engine.newMatch(targetedDeck("damage"), stealthDeck("stealth"), 5L);
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
+		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_TWO, "stealth"));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
+		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
+		interaction.update(state);
+
+		assertFalse(interaction.isHandCardPlayable("damage"));
+		assertFalse(interaction.selectHandCard("damage"));
+	}
+
 	private MatchState newMatch()
 	{
 		return engine.newMatch(deck("p1"), deck("p2"), 7L);
@@ -136,7 +152,7 @@ public class BattleInteractionTest
 	private static List<Card> deck(String id, int manaCost)
 	{
 		List<Card> cards = new ArrayList<>();
-		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		for (int i = 0; i < DuelscapeEngine.DECK_SIZE; i++)
 		{
 			cards.add(new UnitCard(id, id, manaCost, 3, 2));
 		}
@@ -146,10 +162,21 @@ public class BattleInteractionTest
 	private static List<Card> targetedDeck(String id)
 	{
 		List<Card> cards = new ArrayList<>();
-		for (int i = 0; i < GwentEngine.DECK_SIZE; i++)
+		for (int i = 0; i < DuelscapeEngine.DECK_SIZE; i++)
 		{
 			cards.add(new UnitCard(id, id, 0, 2, 2, Collections.singletonList(
 				new DeployEffect(DeployEffect.Type.DAMAGE, DeployEffect.Target.ENEMY_UNIT, 3))));
+		}
+		return cards;
+	}
+
+	private static List<Card> stealthDeck(String id)
+	{
+		List<Card> cards = new ArrayList<>();
+		for (int i = 0; i < DuelscapeEngine.DECK_SIZE; i++)
+		{
+			cards.add(new UnitCard(id, id, 0, 2, 2, Collections.emptyList(),
+				EnumSet.of(UnitKeyword.STEALTH), Collections.emptyList()));
 		}
 		return cards;
 	}

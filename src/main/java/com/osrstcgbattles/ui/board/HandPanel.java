@@ -107,7 +107,7 @@ public class HandPanel extends JPanel
 			Optional<BattleCard> found = catalog.findById(card.getId());
 			if (!found.isPresent())
 			{
-				log.warn("OSRS TCG Battles: hand card '{}' has no catalog entry, skipping tile", card.getId());
+				log.warn("Duelscape TCG: hand card '{}' has no catalog entry, skipping tile", card.getId());
 				continue;
 			}
 			addCardTile(found.get(), card.getId());

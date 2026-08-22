@@ -11,9 +11,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class GwentKeywordTest
+public class DuelscapeKeywordTest
 {
-	private final GwentEngine engine = new GwentEngine();
+	private final DuelscapeEngine engine = new DuelscapeEngine();
 
 	@Test
 	public void shieldBlocksFirstCombatDamage()
@@ -34,6 +34,18 @@ public class GwentKeywordTest
 		CommandResult result = attack(state, "unit-1", "unit-2");
 
 		assertTrue(result.getState().getBoard().getUnits(PlayerId.PLAYER_TWO).isEmpty());
+	}
+
+	@Test
+	public void shieldPreventsPoisonousWhenItPreventsDamage()
+	{
+		MatchState state = state(unit("poison", 1, 2, UnitKeyword.POISONOUS),
+			unit("shield", 0, 10, UnitKeyword.SHIELD));
+
+		BoardUnit target = attack(state, "unit-1", "unit-2").getState().getBoard().find("unit-2");
+
+		assertEquals(10, target.getCurrentHealth());
+		assertFalse(target.isShielded());
 	}
 
 	@Test
@@ -79,6 +91,50 @@ public class GwentKeywordTest
 		assertEquals(RejectionReason.TARGET_STEALTHED,
 			engine.execute(state, new AttackCommand(PlayerId.PLAYER_ONE, "unit-1", "unit-2"))
 				.getRejectionReason().get());
+	}
+
+	@Test
+	public void stealthIsRevealedWhenTheUnitAttacks()
+	{
+		MatchState state = state(unit("stealth", 2, 3, UnitKeyword.STEALTH), unit("target", 0, 4));
+
+		MatchState next = attack(state, "unit-1", "unit-2").getState();
+
+		assertFalse(next.getBoard().find("unit-1").isStealthed());
+	}
+
+	@Test
+	public void rushRestrictionClearsAtTheStartOfTheUnitsNextTurn()
+	{
+		MatchState state = state(unit("rush", 2, 3, UnitKeyword.RUSH), unit("target", 0, 4));
+		assertTrue(state.getBoard().find("unit-1").isRushRestricted());
+
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
+		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
+
+		assertTrue(state.getBoard().find("unit-1").isReady());
+		assertFalse(state.getBoard().find("unit-1").isRushRestricted());
+	}
+
+	@Test
+	public void simultaneousLethalCompletesAsADraw()
+	{
+		List<DeathrattleEffect> lethal = Collections.singletonList(
+			new DeathrattleEffect(DeathrattleEffect.Type.DAMAGE_ENEMY_HERO, 1));
+		UnitCard attacker = new UnitCard("attacker", "Attacker", 0, 1, 1, Collections.emptyList(),
+			Collections.emptySet(), lethal);
+		UnitCard target = new UnitCard("target", "Target", 0, 1, 1, Collections.emptyList(),
+			Collections.emptySet(), lethal);
+		MatchState state = state(attacker, target, 1, 1);
+
+		MatchState next = attack(state, "unit-1", "unit-2").getState();
+
+		assertEquals(MatchStatus.COMPLETE, next.getStatus());
+		assertEquals(MatchPhase.COMPLETE, next.getPhase());
+		assertFalse(next.getActivePlayer().isPresent());
+		assertFalse(next.getWinner().isPresent());
+		assertEquals(0, next.getPlayer(PlayerId.PLAYER_ONE).getHeroHealth());
+		assertEquals(0, next.getPlayer(PlayerId.PLAYER_TWO).getHeroHealth());
 	}
 
 	@Test
@@ -135,6 +191,13 @@ public class GwentKeywordTest
 		CommandResult result = engine.execute(state, new AttackCommand(PlayerId.PLAYER_ONE, attacker, target));
 		assertTrue(result.getRejectionReason().orElse(null) + "", result.isAccepted());
 		return result;
+	}
+
+	private MatchState accepted(MatchState state, Command command)
+	{
+		CommandResult result = engine.execute(state, command);
+		assertTrue(result.getRejectionReason().orElse(null) + "", result.isAccepted());
+		return result.getState();
 	}
 
 	private static MatchState state(UnitCard attacker, UnitCard target)

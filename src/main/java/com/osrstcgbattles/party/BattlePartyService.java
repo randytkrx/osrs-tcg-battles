@@ -287,12 +287,9 @@ public final class BattlePartyService
 		PartyMember sender = partyService.getMemberById(message.getMemberId());
 		if (local == null || !local.isLoggedIn() || sender == null) return;
 		BattlePartyCoordinator active = ensureCoordinator(local.getMemberId());
-		BattlePartyCoordinator.ReceiveResult result = active.receive(message.getMemberId(), sender.getDisplayName(),
-			sender.isLoggedIn(), message, System.nanoTime());
-		if (result == BattlePartyCoordinator.ReceiveResult.GAP)
-		{
-			active.abort("Party message sequence gap");
-		}
+		active.receive(message.getMemberId(), sender.getDisplayName(), sender.isLoggedIn(), message, System.nanoTime());
+		// A later envelope can race or arrive before a retransmission. Leave the session open so the
+		// sender can retransmit the missing authenticated envelope with its original sequence.
 		flushAndPublish();
 	}
 

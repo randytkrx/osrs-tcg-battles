@@ -10,9 +10,7 @@ public enum BattlePartyMessageType
 	READY,
 	ACTION,
 	ACTION_ACK,
-	SNAPSHOT_REQUEST,
+	/** Initial seed commitment and deck setup exchange; not live-state recovery. */
 	SNAPSHOT,
-	RESUME,
-	CONCEDE,
 	ABORT
 }

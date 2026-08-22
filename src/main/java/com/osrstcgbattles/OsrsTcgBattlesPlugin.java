@@ -15,7 +15,7 @@ import com.osrstcgbattles.collection.OwnedCardCollectionSnapshot;
 import com.osrstcgbattles.deck.Deck;
 import com.osrstcgbattles.deck.DeckValidationResult;
 import com.osrstcgbattles.deck.DeckValidator;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.Card;
 import com.osrstcgbattles.integration.CatalogCardLookup;
@@ -66,8 +66,8 @@ import net.runelite.client.ui.NavigationButton;
 import okhttp3.OkHttpClient;
 
 @PluginDescriptor(
-	name = "OSRS TCG Battles",
-	description = "Build decks from OSRS TCG cards and play local or synchronized friend battles",
+	name = "Duelscape TCG",
+	description = "Build decks for Duelscape TCG and play local or synchronized friend battles",
 	tags = {"cards", "tcg", "battle"}
 )
 public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
@@ -176,7 +176,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			}
 			panel = newPanel;
 			navigationButton = NavigationButton.builder()
-				.tooltip("OSRS TCG Battles")
+				.tooltip("Duelscape TCG")
 				.icon(createIcon())
 				.priority(7)
 				.panel(newPanel)
@@ -724,7 +724,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		CatalogDeckFactory factory = new CatalogDeckFactory(currentCatalog);
 		List<Card> firstDeck = factory.create(selected);
 		List<Card> secondDeck = factory.create(opponent);
-		GwentEngine engine = new GwentEngine();
+		DuelscapeEngine engine = new DuelscapeEngine();
 		MatchState match = engine.newMatchWithMulligan(firstDeck, secondDeck, DEMO_SEED);
 		SwingUtilities.invokeLater(() -> {
 			synchronized (stateLock)

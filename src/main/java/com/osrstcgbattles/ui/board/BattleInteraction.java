@@ -5,7 +5,7 @@ import com.osrstcgbattles.engine.BoardUnit;
 import com.osrstcgbattles.engine.Card;
 import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.DeployEffect;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.MatchPhase;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
@@ -229,19 +229,20 @@ public final class BattleInteraction
 			return false;
 		}
 		if (card instanceof UnitCard
-			&& state.getBoard().getUnits(localSeat).size() >= GwentEngine.BATTLEFIELD_LIMIT)
+			&& state.getBoard().getUnits(localSeat).size() >= DuelscapeEngine.BATTLEFIELD_LIMIT)
 		{
 			return false;
 		}
 		if (card instanceof UnitCard && ((UnitCard) card).hasKeyword(UnitKeyword.NEX_ASCENSION)
-			&& !GwentEngine.hasNexCommanders(state.getBoard(), localSeat)) return false;
+			&& !DuelscapeEngine.hasNexCommanders(state.getBoard(), localSeat)) return false;
 		if (!requiresTarget(card))
 		{
 			return true;
 		}
 		for (PlayerId owner : PlayerId.values())
 		{
-			if (isLegalTarget(card, owner) && !state.getBoard().getUnits(owner).isEmpty())
+			if (isLegalTarget(card, owner) && state.getBoard().getUnits(owner).stream()
+				.anyMatch(unit -> owner != localSeat.opponent() || !unit.isStealthed()))
 			{
 				return true;
 			}

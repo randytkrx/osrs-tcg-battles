@@ -3,7 +3,7 @@ package com.osrstcgbattles.ui;
 import com.osrstcgbattles.catalog.BattleCardCatalog;
 import com.osrstcgbattles.collection.OwnedCardCollectionSnapshot;
 import com.osrstcgbattles.deck.Deck;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.persist.DeckProfile;
 import com.osrstcgbattles.party.PartyDuelSnapshot;
 import com.osrstcgbattles.party.PartyOpponent;
@@ -194,18 +194,18 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 	static String rulesHtml()
 	{
 		return "<html><body style='background:#1f1a15;color:#e2d6be;font-family:sans-serif;font-size:9px;'>"
-			+ "<h2 style='color:#deB452;margin-bottom:3px'>OSRS TCG Battles</h2>"
-			+ "<p>Build a <b>" + GwentEngine.DECK_SIZE + "-card deck</b>, reduce the enemy hero from <b>"
-			+ GwentEngine.HERO_HEALTH + " health</b> to zero, and protect your own.</p>"
+			+ "<h2 style='color:#deB452;margin-bottom:3px'>Duelscape TCG</h2>"
+			+ "<p>Build a <b>" + DuelscapeEngine.DECK_SIZE + "-card deck</b>, reduce the enemy hero from <b>"
+			+ DuelscapeEngine.HERO_HEALTH + " health</b> to zero, and protect your own.</p>"
 			+ section("Before You Build", "Use the <b>OSRS TCG</b> plugin to open card packs and start your collection. "
 				+ "Collected cards can be used in custom decks; unchanged built-in starters are ready immediately.")
-			+ section("1. Opening Hand", "Draw " + GwentEngine.OPENING_HAND_SIZE
+			+ section("1. Opening Hand", "Draw " + DuelscapeEngine.OPENING_HAND_SIZE
 				+ " cards. Click cards to replace them during the mulligan, then press <b>Keep Hand</b>.")
 			+ section("2. Mana", "You begin with 1 mana crystal. Your maximum mana grows by one each turn, up to "
-				+ GwentEngine.MAXIMUM_MANA + ", and refills at the start of your turn. Some special cards grant extra "
+				+ DuelscapeEngine.MAXIMUM_MANA + ", and refills at the start of your turn. Some special cards grant extra "
 				+ "mana for the current turn.")
 			+ section("3. Playing Cards", "Click a glowing card in your hand. Units enter your battlefield; special cards "
-				+ "resolve their effect immediately. You may control up to " + GwentEngine.BATTLEFIELD_LIMIT + " units.")
+				+ "resolve their effect immediately. You may control up to " + DuelscapeEngine.BATTLEFIELD_LIMIT + " units.")
 			+ section("4. Deploy Effects", "Some cards damage an enemy or strengthen an ally when played. After selecting "
 				+ "the card, click a glowing target. <b>Hover any card to read its full effect.</b>")
 			+ section("5. Combat", "New units have summoning sickness and cannot attack until your next turn. Click a ready "
@@ -216,7 +216,7 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 				+ "units; Rush attacks units immediately; Taunt must be attacked first; Stealth prevents enemy targeting "
 				+ "until attacking; and Deathrattle triggers when a unit dies. Nex can only be summoned while all four "
 				+ "God Wars commanders are allied, and summoning her wins the game.")
-			+ section("7. Hand and Fatigue", "Your hand holds at most " + GwentEngine.HAND_LIMIT
+			+ section("7. Hand and Fatigue", "Your hand holds at most " + DuelscapeEngine.HAND_LIMIT
 				+ " cards. When your deck is empty, failed draws deal increasing fatigue damage.")
 			+ section("8. Controls", "<b>Right-click</b> or press <b>Esc</b> to cancel a selection. Press <b>End Turn</b> when "
 				+ "finished. You may concede at any time.")

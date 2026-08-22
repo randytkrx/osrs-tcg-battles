@@ -10,7 +10,7 @@ import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.CommandResult;
 import com.osrstcgbattles.engine.ConcedeCommand;
 import com.osrstcgbattles.engine.EndTurnCommand;
-import com.osrstcgbattles.engine.GwentEngine;
+import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.FinishMulliganCommand;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
@@ -61,7 +61,7 @@ public final class PartyMatchCoordinator
 	private final long localContribution;
 	private final PlayerId localSeat;
 	private final PlayerId peerSeat;
-	private final GwentEngine engine = new GwentEngine();
+	private final DuelscapeEngine engine = new DuelscapeEngine();
 	private final List<PartyMatchListener> listeners = new ArrayList<>();
 
 	private PartyMatchSnapshot.Status status = PartyMatchSnapshot.Status.WAITING_SETUP;
@@ -210,9 +210,6 @@ public final class PartyMatchCoordinator
 				case ACTION_ACK:
 					receiveAck(message.getPayload());
 					break;
-				case CONCEDE:
-					receiveTransportConcede(message.getPayload());
-					break;
 				default:
 					fail(false, "Match synchronization failed");
 			}
@@ -259,8 +256,8 @@ public final class PartyMatchCoordinator
 
 	private void validateLocalConfiguration()
 	{
-		if (catalog.getRulesetVersion() != GwentEngine.RULESET_VERSION
-			|| duel.getRulesetVersion() != GwentEngine.RULESET_VERSION
+		if (catalog.getRulesetVersion() != DuelscapeEngine.RULESET_VERSION
+			|| duel.getRulesetVersion() != DuelscapeEngine.RULESET_VERSION
 			|| !Objects.equals(duel.getCatalogHash(), catalog.getSha256()))
 			throw new IllegalArgumentException("duel catalog metadata does not match catalog");
 		if (!localDeck.getId().equals(duel.getDeckId())) throw new IllegalArgumentException("selected deck ID does not match READY");
@@ -396,20 +393,6 @@ public final class PartyMatchCoordinator
 		pendingRevision = null;
 		pendingHash = null;
 		pendingActionPayload = null;
-	}
-
-	private void receiveTransportConcede(Map<String, Object> payload)
-	{
-		if (status == PartyMatchSnapshot.Status.COMPLETE && payload.isEmpty()) return;
-		if (status != PartyMatchSnapshot.Status.ACTIVE || !payload.isEmpty())
-			throw new IllegalArgumentException("invalid transport concede");
-		CommandResult result = engine.execute(state, new ConcedeCommand(peerSeat));
-		if (!result.isAccepted()) throw new IllegalArgumentException("illegal concede");
-		state = result.getState();
-		revision++;
-		status = PartyMatchSnapshot.Status.COMPLETE;
-		userStatus = "Match complete";
-		publish();
 	}
 
 	private Command parseCommand(Map<String, Object> payload, PlayerId actor)

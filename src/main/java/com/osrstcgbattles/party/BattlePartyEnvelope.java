@@ -6,7 +6,7 @@ import net.runelite.client.party.messages.PartyMemberMessage;
 /** The single wire message used by the battle party protocol. */
 public final class BattlePartyEnvelope extends PartyMemberMessage
 {
-	public static final int CURRENT_PROTOCOL_VERSION = 2;
+	public static final int CURRENT_PROTOCOL_VERSION = 3;
 	public static final int MAX_ID_LENGTH = 128;
 	public static final int MAX_CIPHERTEXT_BYTES = 24 * 1024;
 	public static final long MAX_SEQUENCE = 1_000_000_000L;
