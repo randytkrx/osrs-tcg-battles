@@ -72,9 +72,16 @@ Built-in starters are protected templates. Use **Duplicate** to create an editab
 
 ### Keywords
 
-![Shield, Lifesteal, Poisonous, Rush, Taunt, Stealth, Deploy, and Deathrattle cards rendered in the battle UI](docs/images/keyword-showcase.png)
-
-Keyword badges and card rules show how each unit changes combat. Shield, Lifesteal, Poisonous, Rush, Taunt, Stealth, Deploy, and Deathrattle are supported throughout local and friend battles.
+| Keyword | Effect |
+|---|---|
+| **Shield** | Prevents the next source of damage. |
+| **Lifesteal** | Damage restores that much health to the controlling hero. |
+| **Poisonous** | Any combat damage destroys the damaged unit. |
+| **Rush** | The unit may attack enemy units on the turn it is played. |
+| **Taunt** | Visible Taunt units must be attacked before other targets. |
+| **Stealth** | The unit cannot be targeted until it attacks. |
+| **Deploy** | Resolves an effect when the card is played. |
+| **Deathrattle** | Resolves an effect when the unit dies. |
 
 Nex is a special alternate win condition. If General Graardor, Commander Zilyana, Kree'arra, and K'ril Tsutsaroth are allied on your battlefield, successfully summoning Nex wins the match immediately.
 
