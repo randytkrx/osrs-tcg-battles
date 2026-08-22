@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,16 +31,6 @@ public final class CanonicalPartyJsonCodec
 	{
 		Objects.requireNonNull(payload, "payload");
 		return encodeElement(gson.toJsonTree(payload, Map.class));
-	}
-
-	public <T> String encodeDto(T payload, Class<T> dtoType)
-	{
-		validateDtoType(dtoType);
-		if (payload == null || payload.getClass() != dtoType)
-		{
-			throw new IllegalArgumentException("payload must exactly match dtoType");
-		}
-		return encodeElement(gson.toJsonTree(payload, dtoType));
 	}
 
 	public Map<String, Object> decodeMap(String json)
@@ -81,17 +70,6 @@ public final class CanonicalPartyJsonCodec
 			return Collections.unmodifiableList(copy);
 		}
 		return value;
-	}
-
-	public <T> T decodeDto(String json, Class<T> dtoType)
-	{
-		validateDtoType(dtoType);
-		JsonElement root = parseBounded(json);
-		if (!root.isJsonObject())
-		{
-			throw new IllegalArgumentException("DTO payload must be a JSON object");
-		}
-		return gson.fromJson(root, dtoType);
 	}
 
 	private String encodeElement(JsonElement element)
@@ -198,16 +176,6 @@ public final class CanonicalPartyJsonCodec
 		if (json.getBytes(StandardCharsets.UTF_8).length > MAX_JSON_BYTES)
 		{
 			throw new IllegalArgumentException("JSON payload is too large");
-		}
-	}
-
-	private static void validateDtoType(Class<?> type)
-	{
-		if (type == null || type == Object.class || type.isInterface() || type.isArray() || type.isEnum()
-			|| Map.class.isAssignableFrom(type) || JsonElement.class.isAssignableFrom(type)
-			|| Modifier.isAbstract(type.getModifiers()))
-		{
-			throw new IllegalArgumentException("a concrete DTO class is required");
 		}
 	}
 }
