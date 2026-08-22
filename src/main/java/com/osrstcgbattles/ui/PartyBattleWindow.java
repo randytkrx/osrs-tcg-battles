@@ -405,7 +405,6 @@ public final class PartyBattleWindow
 		}
 		catch (InterruptedException exception)
 		{
-			Thread.currentThread().interrupt();
 			throw new IllegalStateException("Interrupted while creating party battle", exception);
 		}
 		catch (InvocationTargetException exception)

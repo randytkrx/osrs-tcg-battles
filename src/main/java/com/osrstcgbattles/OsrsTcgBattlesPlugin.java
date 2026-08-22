@@ -1385,7 +1385,6 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 		}
 		catch (InterruptedException ex)
 		{
-			Thread.currentThread().interrupt();
 			throw new IllegalStateException("Interrupted while updating plugin UI", ex);
 		}
 		catch (InvocationTargetException ex)

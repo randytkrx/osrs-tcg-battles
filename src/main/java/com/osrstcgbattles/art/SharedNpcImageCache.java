@@ -358,7 +358,7 @@ public final class SharedNpcImageCache
 		generation++;
 		if (executor != null)
 		{
-			executor.shutdownNow();
+			executor.shutdown();
 			executor = null;
 		}
 		pending.clear();

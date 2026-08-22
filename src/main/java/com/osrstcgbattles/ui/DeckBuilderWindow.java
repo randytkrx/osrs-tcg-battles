@@ -930,7 +930,6 @@ public final class DeckBuilderWindow
 		}
 		catch (InterruptedException exception)
 		{
-			Thread.currentThread().interrupt();
 			throw new IllegalStateException("Interrupted while creating deck builder", exception);
 		}
 		catch (InvocationTargetException exception)

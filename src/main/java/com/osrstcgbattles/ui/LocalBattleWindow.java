@@ -187,7 +187,6 @@ public final class LocalBattleWindow
 		}
 		catch (InterruptedException ex)
 		{
-			Thread.currentThread().interrupt();
 			throw new IllegalStateException("Interrupted while creating local battle", ex);
 		}
 		catch (InvocationTargetException ex)

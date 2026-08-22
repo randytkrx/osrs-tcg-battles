@@ -34,7 +34,7 @@ public class SharedNpcImageCacheTest
 			}
 			catch (InterruptedException ex)
 			{
-				Thread.currentThread().interrupt();
+				throw new AssertionError(ex);
 			}
 		});
 		assertTrue(edtBlocked.await(5, TimeUnit.SECONDS));
