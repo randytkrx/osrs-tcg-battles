@@ -113,7 +113,7 @@ Deck profiles are stored through RuneLite's profile-aware configuration system. 
 - Friend-duel messages travel through RuneLite Party services.
 - Card ownership is exchanged locally through RuneLite plugin messages.
 - Card artwork may be downloaded from URLs included in the bundled catalog.
-- Artwork is cached under RuneLite's `OSRS-TCG/images-v2` directory and shared with compatible TCG plugins to avoid duplicate downloads.
+- Artwork is cached under RuneLite's `OSRS-TCG/images-v2` directory and shared with compatible legacy TCG plugins. OSRS TCG v1 uses its own separate image cache.
 - Deck lists are not uploaded to a separate service.
 
 ## Troubleshooting

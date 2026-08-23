@@ -73,6 +73,30 @@ public final class OwnedCardCollectionSnapshot
 			return false;
 		}
 		String normalized = cardName.trim().toLowerCase(Locale.ROOT);
-		return !normalized.isEmpty() && displayNameByNormalizedName.containsKey(normalized);
+		if (normalized.isEmpty())
+		{
+			return false;
+		}
+		if (displayNameByNormalizedName.containsKey(normalized))
+		{
+			return true;
+		}
+		String canonicalName = v1CanonicalName(normalized);
+		return canonicalName != null && displayNameByNormalizedName.containsKey(canonicalName);
+	}
+
+	private static String v1CanonicalName(String legacyName)
+	{
+		// V1 folds NPC variants into parent cards and disambiguates item/NPC name collisions.
+		switch (legacyName)
+		{
+			case "ice troll male":
+			case "frenzied ice troll male":
+				return "ice troll";
+			case "scorpia's offspring":
+				return "npc:6616";
+			default:
+				return null;
+		}
 	}
 }

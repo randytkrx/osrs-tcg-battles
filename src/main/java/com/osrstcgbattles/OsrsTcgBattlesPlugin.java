@@ -117,6 +117,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 	private final SecureRandom secureRandom = new SecureRandom();
 	private int unknownOwnershipTicks;
 	private int partyUiRefreshTicks;
+	private boolean ownershipProfileRefreshPending;
 	private final Object stateLock = new Object();
 	private boolean running;
 	private boolean startingUp;
@@ -236,6 +237,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			profileRepository = null;
 			unknownOwnershipTicks = 0;
 			partyUiRefreshTicks = 0;
+			ownershipProfileRefreshPending = false;
 			partyUserMessage = null;
 			partySubmissionPending = false;
 		}
@@ -292,6 +294,7 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 			pendingPartyDeck = null;
 			profileRepository = loadProfileRepository();
 			unknownOwnershipTicks = 0;
+			ownershipProfileRefreshPending = true;
 			partyUserMessage = null;
 			partySubmissionPending = false;
 		}
@@ -369,7 +372,13 @@ public class OsrsTcgBattlesPlugin extends Plugin implements BattleUiController
 				partyUiRefreshTicks = 0;
 				refreshPartyUi = true;
 			}
-			if (collectionBridge.snapshot().isKnown())
+			if (ownershipProfileRefreshPending)
+			{
+				ownershipProfileRefreshPending = false;
+				unknownOwnershipTicks = 0;
+				queryOwnership = true;
+			}
+			else if (collectionBridge.snapshot().isKnown())
 			{
 				unknownOwnershipTicks = 0;
 			}
