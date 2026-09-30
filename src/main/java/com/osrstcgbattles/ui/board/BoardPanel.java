@@ -3,8 +3,8 @@ package com.osrstcgbattles.ui.board;
 import com.osrstcgbattles.art.CardArtProvider;
 import com.osrstcgbattles.catalog.BattleCard;
 import com.osrstcgbattles.catalog.BattleCardCatalog;
+import com.osrstcgbattles.engine.BoardState;
 import com.osrstcgbattles.engine.BoardUnit;
-import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.PlayerId;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -87,7 +87,7 @@ public class BoardPanel extends JPanel
 		return new Dimension(BoardTheme.BOARD_WIDTH, BoardTheme.BOARD_HEIGHT);
 	}
 
-	public void setState(MatchState state, PlayerId localSeat)
+	public void setState(BoardState state, PlayerId localSeat)
 	{
 		Objects.requireNonNull(state, "state");
 		Objects.requireNonNull(localSeat, "localSeat");
@@ -157,14 +157,14 @@ public class BoardPanel extends JPanel
 		this.cancelListener = listener == null ? () -> { } : listener;
 	}
 
-	private void addBand(MatchState state, PlayerId owner)
+	private void addBand(BoardState state, PlayerId owner)
 	{
 		JPanel band = new JPanel(new BoardLayout(BoardTheme.ROW_GAP));
 		band.setOpaque(false);
 		band.setBorder(BorderFactory.createEmptyBorder(BoardTheme.BAND_TOP_INSET, 6,
 			BoardTheme.BAND_BOTTOM_INSET, 6));
 
-		for (BoardUnit unit : state.getBoard().getUnits(owner))
+		for (BoardUnit unit : state.getUnits(owner))
 		{
 			Optional<BattleCard> found = catalog.findBoardCardById(unit.getDefinition().getId());
 			if (!found.isPresent())

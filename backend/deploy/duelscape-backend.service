@@ -1,0 +1,45 @@
+[Unit]
+Description=Duelscape authoritative game backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=duelscape
+Group=duelscape
+WorkingDirectory=/var/lib/duelscape
+Environment=DUELSCAPE_BIND_HOST=127.0.0.1
+Environment=DUELSCAPE_PORT=8787
+Environment=DUELSCAPE_DATABASE=/var/lib/duelscape/ranked.db
+Environment=DUELSCAPE_RANKED_AUDIENCE=wss://play.deargod.live/v1/ws
+ExecStart=/usr/bin/java -Xms64m -Xmx384m -XX:+UseSerialGC -jar /opt/duelscape/duelscape-backend.jar
+Restart=on-failure
+RestartSec=5s
+SuccessExitStatus=143
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ReadWritePaths=/var/lib/duelscape
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+MemoryMax=512M
+TasksMax=256
+LimitNOFILE=8192
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

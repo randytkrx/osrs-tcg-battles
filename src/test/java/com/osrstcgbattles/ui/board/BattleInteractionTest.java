@@ -12,6 +12,7 @@ import com.osrstcgbattles.engine.PlayCardCommand;
 import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.UnitCard;
 import com.osrstcgbattles.engine.UnitKeyword;
+import com.osrstcgbattles.match.MatchView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -30,7 +31,7 @@ public class BattleInteractionTest
 	public void targetlessCardPlaysDirectly()
 	{
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
-		interaction.update(newMatch());
+		interaction.update(view(newMatch()));
 
 		assertTrue(interaction.selectHandCard("p1"));
 		Command command = interaction.commit().get();
@@ -46,7 +47,7 @@ public class BattleInteractionTest
 		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
 		String attackerId = state.getBoard().getUnits(PlayerId.PLAYER_ONE).get(0).getInstanceId();
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
-		interaction.update(state);
+		interaction.update(view(state));
 
 		assertFalse(interaction.clickUnit(attackerId).isPresent());
 		assertTrue(interaction.getSelectedAttackerId().isPresent());
@@ -62,15 +63,15 @@ public class BattleInteractionTest
 	{
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
 		MatchState state = newMatch();
-		interaction.update(state);
+		interaction.update(view(state));
 		assertFalse(interaction.isEnemyHeroTargetable());
 
 		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_ONE));
-		interaction.update(state);
+		interaction.update(view(state));
 		assertFalse(interaction.isEnemyHeroTargetable());
 		assertFalse(interaction.clickEnemyHero().isPresent());
 
-		interaction.update(engine.newMatchWithMulligan(deck("p1"), deck("p2"), 9L));
+		interaction.update(view(engine.newMatchWithMulligan(deck("p1"), deck("p2"), 9L)));
 		assertFalse(interaction.isEnemyHeroTargetable());
 		assertFalse(interaction.clickEnemyHero().isPresent());
 	}
@@ -84,7 +85,7 @@ public class BattleInteractionTest
 		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
 		String attackerId = state.getBoard().getUnits(PlayerId.PLAYER_ONE).get(0).getInstanceId();
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
-		interaction.update(state);
+		interaction.update(view(state));
 
 		assertFalse(interaction.clickUnit(attackerId).isPresent());
 		assertTrue(interaction.getSelectedAttackerId().isPresent());
@@ -96,7 +97,7 @@ public class BattleInteractionTest
 	public void unaffordableCardCannotStartAPlay()
 	{
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
-		interaction.update(engine.newMatch(deck("expensive", 2), deck("p2"), 4L));
+		interaction.update(view(engine.newMatch(deck("expensive", 2), deck("p2"), 4L)));
 
 		assertFalse(interaction.isHandCardPlayable("expensive"));
 		assertFalse(interaction.selectHandCard("expensive"));
@@ -111,7 +112,7 @@ public class BattleInteractionTest
 		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_TWO, "p2"));
 		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
-		interaction.update(state);
+		interaction.update(view(state));
 
 		assertTrue(interaction.selectHandCard("damage"));
 		assertTrue(interaction.isTargetPending());
@@ -126,7 +127,7 @@ public class BattleInteractionTest
 		state = accepted(state, new PlayCardCommand(PlayerId.PLAYER_TWO, "stealth"));
 		state = accepted(state, new EndTurnCommand(PlayerId.PLAYER_TWO));
 		BattleInteraction interaction = new BattleInteraction(PlayerId.PLAYER_ONE);
-		interaction.update(state);
+		interaction.update(view(state));
 
 		assertFalse(interaction.isHandCardPlayable("damage"));
 		assertFalse(interaction.selectHandCard("damage"));
@@ -135,6 +136,11 @@ public class BattleInteractionTest
 	private MatchState newMatch()
 	{
 		return engine.newMatch(deck("p1"), deck("p2"), 7L);
+	}
+
+	private static MatchView view(MatchState state)
+	{
+		return MatchView.forPlayer(state, PlayerId.PLAYER_ONE);
 	}
 
 	private MatchState accepted(MatchState state, Command command)

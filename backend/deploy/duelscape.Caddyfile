@@ -1,0 +1,17 @@
+play.deargod.live {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	handle /v1/ws {
+		reverse_proxy 127.0.0.1:8787
+	}
+
+	handle /healthz {
+		reverse_proxy 127.0.0.1:8787
+	}
+
+	respond 404
+}

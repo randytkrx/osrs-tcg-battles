@@ -7,7 +7,6 @@ import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.DeployEffect;
 import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.MatchPhase;
-import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
 import com.osrstcgbattles.engine.MulliganCommand;
 import com.osrstcgbattles.engine.PlayCardCommand;
@@ -15,6 +14,7 @@ import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.SpecialCard;
 import com.osrstcgbattles.engine.UnitCard;
 import com.osrstcgbattles.engine.UnitKeyword;
+import com.osrstcgbattles.match.MatchView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +29,7 @@ public final class BattleInteraction
 {
 	private final PlayerId localSeat;
 
-	private MatchState state;
+	private MatchView state;
 	private String selectedCardId;
 	private String selectedAttackerId;
 	private boolean targetPending;
@@ -40,7 +40,7 @@ public final class BattleInteraction
 	}
 
 	/** Adopts a new match state and drops any half-finished selection. */
-	public void update(MatchState state)
+	public void update(MatchView state)
 	{
 		this.state = Objects.requireNonNull(state, "state");
 		cancel();
@@ -297,7 +297,7 @@ public final class BattleInteraction
 		{
 			return null;
 		}
-		for (Card card : state.getPlayer(localSeat).getHand())
+		for (Card card : state.getLocalHand())
 		{
 			if (card.getId().equals(cardId))
 			{

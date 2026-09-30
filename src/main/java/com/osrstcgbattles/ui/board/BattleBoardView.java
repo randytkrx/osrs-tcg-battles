@@ -10,12 +10,11 @@ import com.osrstcgbattles.engine.ConcedeCommand;
 import com.osrstcgbattles.engine.EndTurnCommand;
 import com.osrstcgbattles.engine.FinishMulliganCommand;
 import com.osrstcgbattles.engine.MatchPhase;
-import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
 import com.osrstcgbattles.engine.PlayerId;
-import com.osrstcgbattles.engine.PlayerState;
 import com.osrstcgbattles.engine.PlayCardCommand;
 import com.osrstcgbattles.engine.SpecialCard;
+import com.osrstcgbattles.match.MatchView;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.Point;
@@ -51,7 +50,7 @@ public final class BattleBoardView
 	private final JButton keepHandButton;
 
 	private Consumer<Command> commandListener = command -> { };
-	private MatchState state;
+	private MatchView state;
 	private boolean handHidden;
 	private boolean controlsEnabled = true;
 	private String banner = " ";
@@ -146,10 +145,11 @@ public final class BattleBoardView
 	}
 
 	/** Adopts a new authoritative match state and drops any half-finished local selection. */
-	public void setState(MatchState state)
+	public void setState(MatchView state)
 	{
 		clearUnitDrag();
-		MatchState next = Objects.requireNonNull(state, "state");
+		MatchView next = Objects.requireNonNull(state, "state");
+		if (next.getViewer() != localSeat) throw new IllegalArgumentException("match view is for a different player");
 		recordStateChanges(this.state, next);
 		PlayerId previousActive = this.state == null ? null : this.state.getActivePlayer().orElse(null);
 		if (TurnBanner.shouldShow(hasPreviousState,
@@ -172,7 +172,7 @@ public final class BattleBoardView
 			root.getResultOverlay().setVisible(false);
 		}
 		interaction.update(state);
-		boardPanel.setState(state, localSeat);
+		boardPanel.setState(state.getBoard(), localSeat);
 		refreshHand();
 		refreshHighlighting();
 		refreshHud();
@@ -425,7 +425,7 @@ public final class BattleBoardView
 		else if (command instanceof PlayCardCommand && state != null)
 		{
 			String cardId = ((PlayCardCommand) command).getCardId();
-			for (Card card : state.getPlayer(localSeat).getHand())
+			for (Card card : state.getLocalHand())
 			{
 				if (card.getId().equals(cardId) && card instanceof SpecialCard)
 				{
@@ -440,7 +440,7 @@ public final class BattleBoardView
 		}
 	}
 
-	private void recordStateChanges(MatchState previous, MatchState next)
+	private void recordStateChanges(MatchView previous, MatchView next)
 	{
 		if (previous == null)
 		{
@@ -495,7 +495,7 @@ public final class BattleBoardView
 		}
 	}
 
-	private static BoardUnit findUnit(MatchState state, String instanceId)
+	private static BoardUnit findUnit(MatchView state, String instanceId)
 	{
 		for (PlayerId player : PlayerId.values())
 		{
@@ -533,7 +533,7 @@ public final class BattleBoardView
 		HashSet<String> playable = new HashSet<>();
 		boolean localTurn = controlsEnabled && state.getStatus() == MatchStatus.ACTIVE
 			&& state.getActivePlayer().filter(localSeat::equals).isPresent();
-		for (Card card : state.getPlayer(localSeat).getHand())
+		for (Card card : state.getLocalHand())
 		{
 			if (state.getPhase() == MatchPhase.MULLIGAN
 				? localTurn && state.getPlayer(localSeat).getRemainingMulligans() > 0
@@ -551,7 +551,7 @@ public final class BattleBoardView
 		{
 			return;
 		}
-		List<Card> hand = state.getPlayer(localSeat).getHand();
+		List<Card> hand = state.getLocalHand();
 		if (handHidden)
 		{
 			handPanel.setFaceDownCount(hand.size());
@@ -561,7 +561,7 @@ public final class BattleBoardView
 			handPanel.setHand(hand);
 		}
 		// The opponent rendering boundary is intentionally count-only.
-		opponentHandPanel.setFaceDownCount(state.getPlayer(localSeat.opponent()).getHand().size());
+		opponentHandPanel.setFaceDownCount(state.getPlayer(localSeat.opponent()).getHandSize());
 	}
 
 	private void refreshHud()
@@ -570,12 +570,12 @@ public final class BattleBoardView
 		{
 			return;
 		}
-		PlayerState opponent = state.getPlayer(localSeat.opponent());
-		PlayerState local = state.getPlayer(localSeat);
+		MatchView.PlayerView opponent = state.getPlayer(localSeat.opponent());
+		MatchView.PlayerView local = state.getPlayer(localSeat);
 		root.getOpponentHero().setStats(opponent.getHeroHealth(), opponent.getMana(), opponent.getMaximumMana());
 		root.getLocalHero().setStats(local.getHeroHealth(), local.getMana(), local.getMaximumMana());
-		root.getOpponentDeck().setValues(opponent.getDrawPile().size(), opponent.getFatigue());
-		root.getLocalDeck().setValues(local.getDrawPile().size(), local.getFatigue());
+		root.getOpponentDeck().setValues(opponent.getDrawPileSize(), opponent.getFatigue());
+		root.getLocalDeck().setValues(local.getDrawPileSize(), local.getFatigue());
 		refreshStatus();
 	}
 

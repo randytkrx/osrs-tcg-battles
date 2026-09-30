@@ -9,7 +9,7 @@ Build a deck from Old School RuneScape cards and battle inside RuneLite. Duelsca
 | **Build** | Search and filter the full catalog, inspect card rules, shape a mana curve, and save incomplete drafts. |
 | **Start immediately** | Three complete starter decks remain playable without collection ownership while unchanged. |
 | **Battle locally** | Use your selected deck against a starter deck in a two-player hot-seat match. |
-| **Challenge friends** | Invite another member of your RuneLite Party and verify the shared security code before playing. |
+| **Challenge friends** | Invite a RuneLite Party member, create a private online code, or enter casual and ranked matchmaking. |
 | **Follow the battle** | Open a compact in-board log for turns, summons, attacks, damage, defeated units, and results. |
 | **Play distinct strategies** | Shield, Lifesteal, Poisonous, Rush, Taunt, Stealth, Deploy, Deathrattle, temporary mana, and Nex's alternate victory condition are supported. |
 
@@ -19,7 +19,7 @@ Build a deck from Old School RuneScape cards and battle inside RuneLite. Duelsca
 2. Open **Duelscape TCG** from the RuneLite sidebar.
 3. Open **Deck Builder** and create a custom 30-card deck from your collection, or select a built-in starter.
 4. Press **Use Starter** or **Save and Use** when the deck reports that it is ready.
-5. Choose **Local Battle** to play on one client, or invite a member of your RuneLite Party to a friend duel.
+5. Choose **Local Battle**, invite a RuneLite Party member, or enable online play to use private codes and matchmaking.
 
 Opening packs is the normal path for expanding custom decks. The three unchanged starter decks remain available immediately if you want to learn the battle rules first.
 
@@ -109,12 +109,17 @@ Deck profiles are stored through RuneLite's profile-aware configuration system. 
 
 ## Network And Storage
 
-- The plugin does not use an independent game server or account system.
+- Independent online play is opt-in and disabled by default. It connects only after **Enable online play** is selected.
+- The default service is `wss://play.deargod.live/v1/ws`, operated for Duelscape TCG.
+- Online play transmits the current OSRS display name, a persistent public device key, the selected deck, and battle actions. The service also receives the connection IP address.
+- The corresponding private device key remains in RuneLite's plugin-data directory and is never transmitted. Deleting it prevents access to an IGN already registered with that key.
+- IGN registration is trust-on-first-use: the device signature protects later logins, but it does not prove Jagex account ownership or prevent the first claimant from registering another player's public name.
+- Casual and private matches are held in memory. Ranked identity, rating, win/loss record, and completed match history are retained in the service database.
+- Online matches are server-authoritative; opponents receive only player-scoped views that omit hidden cards.
 - Friend-duel messages travel through RuneLite Party services.
 - Card ownership is exchanged locally through RuneLite plugin messages.
 - Card artwork may be downloaded from URLs included in the bundled catalog.
 - Artwork is cached under RuneLite's `OSRS-TCG/images-v2` directory and shared with compatible legacy TCG plugins. OSRS TCG v1 uses its own separate image cache.
-- Deck lists are not uploaded to a separate service.
 
 ## Troubleshooting
 

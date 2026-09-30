@@ -61,6 +61,22 @@ public final class CatalogDeckFactory
 		return Collections.unmodifiableList(cards);
 	}
 
+	public Card createCard(String cardId)
+	{
+		BattleCard definition = catalog.findById(Objects.requireNonNull(cardId, "cardId"))
+			.orElseThrow(() -> new IllegalArgumentException("Unknown catalog card ID: " + cardId));
+		return toCard(definition);
+	}
+
+	public UnitCard createBoardUnitCard(String cardId)
+	{
+		BattleCard definition = catalog.findBoardCardById(Objects.requireNonNull(cardId, "cardId"))
+			.orElseThrow(() -> new IllegalArgumentException("Unknown board card ID: " + cardId));
+		if (definition.getCategory() != CardCategory.UNIT)
+			throw new IllegalArgumentException("Board card is not a unit: " + cardId);
+		return toUnitCard(definition);
+	}
+
 	public List<UnitCard> demoDeck()
 	{
 		return demoDeck(DEFAULT_DEMO_SIZE);

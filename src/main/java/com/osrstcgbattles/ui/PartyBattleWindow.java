@@ -2,13 +2,13 @@ package com.osrstcgbattles.ui;
 
 import com.osrstcgbattles.art.CardArtProvider;
 import com.osrstcgbattles.catalog.BattleCardCatalog;
-import com.osrstcgbattles.engine.Card;
 import com.osrstcgbattles.engine.Command;
 import com.osrstcgbattles.engine.CommandResult;
 import com.osrstcgbattles.engine.ConcedeCommand;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
 import com.osrstcgbattles.engine.PlayerId;
+import com.osrstcgbattles.match.MatchView;
 import com.osrstcgbattles.match.PartyMatchCoordinator;
 import com.osrstcgbattles.match.PartyMatchListener;
 import com.osrstcgbattles.match.PartyMatchSnapshot;
@@ -18,9 +18,6 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,9 +28,8 @@ import javax.swing.WindowConstants;
 
 /**
  * Swing view of a synchronized party match, rendered with a single {@link BattleBoardView} built
- * for the local seat. Only the local player's hand is ever handed to that view -- the opponent's
- * hand is represented purely as a count inside {@link BattleBoardView}'s own HUD, never as real
- * {@link Card} objects, so it cannot leak into this window by construction.
+ * for the local seat. The board receives a player-scoped {@link MatchView}, so hidden opponent
+ * cards are excluded before state reaches the rendering boundary.
  */
 public final class PartyBattleWindow
 {
@@ -197,7 +193,7 @@ public final class PartyBattleWindow
 		MatchState state = current.getMatchState();
 		if (state != null)
 		{
-			view.setState(state);
+			view.setState(MatchView.forPlayer(state, localSeat));
 		}
 		view.setControlsEnabled(actionsEnabled(current.getStatus(), state, localSeat));
 		view.setBanner(statusBanner(current));
@@ -291,20 +287,6 @@ public final class PartyBattleWindow
 	private void removeListener()
 	{
 		if (disposed.compareAndSet(false, true)) coordinator.removeListener(listener);
-	}
-
-	/**
-	 * Presentation-layer hand concealment for a party match: a local seat's visible
-	 * hand is exactly {@code state.getPlayer(localSeat).getHand()}, nothing from the peer seat.
-	 * Production code no longer calls this -- {@link BattleBoardView#setState} is handed the full
-	 * {@link MatchState} and its own {@code refreshHand()} reads {@code state.getPlayer(localSeat)}
-	 * directly, so no opponent {@link Card} reaches a rendered tile. Both peers still hold the full
-	 * deterministic state; this method protects the UI, not against a modified opponent client.
-	 */
-	static List<Card> visibleHand(MatchState state, PlayerId localSeat)
-	{
-		if (state == null) return Collections.emptyList();
-		return Collections.unmodifiableList(new ArrayList<>(state.getPlayer(localSeat).getHand()));
 	}
 
 	static boolean actionsEnabled(PartyMatchSnapshot.Status status, MatchState state, PlayerId localSeat)

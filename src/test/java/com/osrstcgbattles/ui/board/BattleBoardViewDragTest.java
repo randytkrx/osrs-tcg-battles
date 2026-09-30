@@ -12,6 +12,7 @@ import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.PlayCardCommand;
 import com.osrstcgbattles.engine.PlayerId;
 import com.osrstcgbattles.engine.UnitCard;
+import com.osrstcgbattles.match.MatchView;
 import java.awt.Point;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
@@ -37,13 +38,13 @@ public class BattleBoardViewDragTest
 		BattleBoardPanel root = (BattleBoardPanel) view.getComponent();
 		root.setSize(1100, 750);
 		root.doLayout();
-		view.setState(state.get());
+		view.setState(MatchView.forPlayer(state.get(), PlayerId.PLAYER_ONE));
 		view.setCommandListener(command ->
 		{
 			CommandResult result = engine.execute(state.get(), command);
 			assertTrue(result.isAccepted());
 			state.set(result.getState());
-			view.setState(result.getState());
+			view.setState(MatchView.forPlayer(result.getState(), PlayerId.PLAYER_ONE));
 		});
 
 		HandPanel hand = root.getLocalHand();
@@ -120,7 +121,7 @@ public class BattleBoardViewDragTest
 		BattleBoardPanel root = (BattleBoardPanel) view.getComponent();
 		root.setSize(1100, 750);
 		root.doLayout();
-		view.setState(state.get());
+		view.setState(MatchView.forPlayer(state.get(), PlayerId.PLAYER_ONE));
 		layoutBoard(root);
 		view.setCommandListener(command ->
 		{
@@ -128,7 +129,7 @@ public class BattleBoardViewDragTest
 			CommandResult result = engine.execute(state.get(), command);
 			assertTrue(result.isAccepted());
 			state.set(result.getState());
-			view.setState(result.getState());
+			view.setState(MatchView.forPlayer(result.getState(), PlayerId.PLAYER_ONE));
 		});
 		return view;
 	}

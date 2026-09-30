@@ -1,0 +1,30 @@
+[Unit]
+Description=Back up Duelscape ranked data
+After=duelscape-backend.service
+
+[Service]
+Type=oneshot
+User=duelscape
+Group=duelscape
+ExecStart=/opt/duelscape/backup-ranked.sh
+NoNewPrivileges=true
+CapabilityBoundingSet=
+LockPersonality=true
+PrivateDevices=true
+PrivateNetwork=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ReadWritePaths=/var/lib/duelscape /var/backups/duelscape
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+UMask=0077

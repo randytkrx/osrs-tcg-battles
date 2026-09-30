@@ -25,8 +25,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 
@@ -46,7 +49,16 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 	private final JButton acceptButton = new JButton("Accept");
 	private final JButton declineButton = new JButton("Decline");
 	private final JButton abortButton = new JButton("Abort");
+	private final JLabel onlineStatusLabel = new JLabel();
+	private final JTextField lobbyCode = new JTextField();
+	private final JButton onlineConnectButton = new JButton("Connect");
+	private final JButton createLobbyButton = new JButton("Create Code");
+	private final JButton joinLobbyButton = new JButton("Join Code");
+	private final JButton casualQueueButton = new JButton("Casual Queue");
+	private final JButton rankedQueueButton = new JButton("Ranked Queue");
+	private final JButton leaveQueueButton = new JButton("Cancel Waiting");
 	private boolean active = true;
+	private boolean onlineDeckAvailable;
 
 	public OsrsTcgBattlesPanel(BattleUiController controller)
 	{
@@ -112,6 +124,44 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		layout.insets = new Insets(0, 0, 0, 0);
 		friendDuel.add(duelButtons, layout);
 
+		JPanel onlinePlay = new JPanel(new GridBagLayout());
+		onlinePlay.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createTitledBorder("Online Play"),
+			BorderFactory.createEmptyBorder(4, 6, 6, 6)));
+		GridBagConstraints onlineLayout = new GridBagConstraints();
+		onlineLayout.gridx = 0;
+		onlineLayout.weightx = 1.0;
+		onlineLayout.fill = GridBagConstraints.HORIZONTAL;
+		onlineLayout.insets = new Insets(0, 0, 5, 0);
+		onlineLayout.gridy = 0;
+		onlinePlay.add(onlineStatusLabel, onlineLayout);
+		onlineLayout.gridy = 1;
+		onlinePlay.add(lobbyCode, onlineLayout);
+		JPanel onlineButtons = new JPanel(new GridLayout(0, 2, 4, 4));
+		onlineConnectButton.addActionListener(event -> controller.connectOnline());
+		createLobbyButton.addActionListener(event -> controller.createOnlineLobby());
+		joinLobbyButton.addActionListener(event -> controller.joinOnlineLobby(lobbyCode.getText()));
+		lobbyCode.getDocument().addDocumentListener(new DocumentListener()
+		{
+			@Override public void insertUpdate(DocumentEvent event) { updateJoinButton(); }
+			@Override public void removeUpdate(DocumentEvent event) { updateJoinButton(); }
+			@Override public void changedUpdate(DocumentEvent event) { updateJoinButton(); }
+		});
+		casualQueueButton.addActionListener(event -> controller.joinCasualQueue());
+		rankedQueueButton.addActionListener(event -> controller.joinRankedQueue());
+		leaveQueueButton.addActionListener(event -> {
+			controller.leaveCasualQueue();
+		});
+		onlineButtons.add(onlineConnectButton);
+		onlineButtons.add(createLobbyButton);
+		onlineButtons.add(joinLobbyButton);
+		onlineButtons.add(casualQueueButton);
+		onlineButtons.add(rankedQueueButton);
+		onlineButtons.add(leaveQueueButton);
+		onlineLayout.gridy = 2;
+		onlineLayout.insets = new Insets(0, 0, 0, 0);
+		onlinePlay.add(onlineButtons, onlineLayout);
+
 		// The status block and the friend duel box must keep their natural height; placing them in
 		// a NORTH column stops the titled box from stretching to fill the whole tab (which is what
 		// made it render as a huge box that pushed the action buttons out of view).
@@ -126,8 +176,11 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		topLayout.gridy = 0;
 		top.add(status, topLayout);
 		topLayout.gridy = 1;
-		topLayout.insets = new Insets(0, 0, 0, 0);
+		topLayout.insets = new Insets(0, 0, 8, 0);
 		top.add(friendDuel, topLayout);
+		topLayout.gridy = 2;
+		topLayout.insets = new Insets(0, 0, 0, 0);
+		top.add(onlinePlay, topLayout);
 		playLayout.gridy = 0;
 		play.add(top, playLayout);
 
@@ -277,16 +330,40 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		opponentCombo.setEnabled(duel.getStatus() == PartyDuelSnapshot.Status.IDLE
 			|| duel.getStatus() == PartyDuelSnapshot.Status.TERMINAL);
 		boolean deckAvailable = readiness != null && readiness.isPlayable();
+		onlineDeckAvailable = deckAvailable;
 		inviteButton.setEnabled(BattleUiFormatters.canInvitePartyDuel(duel, hasOpponent, deckAvailable));
 		acceptButton.setEnabled(BattleUiFormatters.canAcceptPartyDuel(duel, deckAvailable));
 		declineButton.setEnabled(duel.canDecline());
 		abortButton.setEnabled(duel.canAbort());
+
+		boolean onlineEnabled = controller.isOnlinePlayEnabled();
+		boolean canStartWaiting = controller.canStartOnlineWaiting();
+		onlineStatusLabel.setText("<html>" + escape(controller.getOnlineStatus()) + "</html>");
+		onlineConnectButton.setEnabled(controller.canConnectOnline());
+		lobbyCode.setEnabled(onlineEnabled && canStartWaiting);
+		createLobbyButton.setEnabled(canStartWaiting && deckAvailable);
+		joinLobbyButton.setEnabled(canStartWaiting && deckAvailable && !lobbyCode.getText().trim().isEmpty());
+		casualQueueButton.setEnabled(canStartWaiting && deckAvailable);
+		rankedQueueButton.setEnabled(canStartWaiting && deckAvailable);
+		leaveQueueButton.setEnabled(controller.canCancelOnlineWaiting());
 	}
 
 	private long selectedOpponentId()
 	{
 		PartyOpponent selected = (PartyOpponent) opponentCombo.getSelectedItem();
 		return selected == null ? 0 : selected.getMemberId();
+	}
+
+	private void updateJoinButton()
+	{
+		joinLobbyButton.setEnabled(active && controller.isOnlinePlayEnabled()
+			&& controller.canStartOnlineWaiting() && onlineDeckAvailable && !lobbyCode.getText().trim().isEmpty());
+	}
+
+	private static String escape(String value)
+	{
+		if (value == null) return "";
+		return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
 	public void reset()
@@ -297,6 +374,7 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 			return;
 		}
 		active = false;
+		onlineDeckAvailable = false;
 		refreshButton.setEnabled(false);
 		builderButton.setEnabled(false);
 		demoButton.setEnabled(false);
@@ -305,6 +383,12 @@ public final class OsrsTcgBattlesPanel extends PluginPanel
 		acceptButton.setEnabled(false);
 		declineButton.setEnabled(false);
 		abortButton.setEnabled(false);
+		onlineConnectButton.setEnabled(false);
+		createLobbyButton.setEnabled(false);
+		joinLobbyButton.setEnabled(false);
+		rankedQueueButton.setEnabled(false);
+		casualQueueButton.setEnabled(false);
+		leaveQueueButton.setEnabled(false);
 		collectionLabel.setText("Collection: Not loaded");
 		catalogLabel.setText("Catalog: Not loaded");
 		deckLabel.setText("Selected deck: None");

@@ -34,6 +34,14 @@ public final class BoardUnit
 			definition.hasKeyword(UnitKeyword.SHIELD), definition.hasKeyword(UnitKeyword.STEALTH), rush);
 	}
 
+	public static BoardUnit visible(String instanceId, UnitCard definition, int attack, int health, boolean ready,
+		boolean shielded, boolean stealthed, boolean rushRestricted)
+	{
+		if (instanceId == null || instanceId.isEmpty() || definition == null || attack < 0 || health < 0)
+			throw new IllegalArgumentException("invalid visible board unit");
+		return new BoardUnit(instanceId, definition, attack, health, ready, shielded, stealthed, rushRestricted);
+	}
+
 	public String getInstanceId()
 	{
 		return instanceId;

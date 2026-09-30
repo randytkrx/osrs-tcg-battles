@@ -9,6 +9,7 @@ import com.osrstcgbattles.engine.DuelscapeEngine;
 import com.osrstcgbattles.engine.MatchState;
 import com.osrstcgbattles.engine.MatchStatus;
 import com.osrstcgbattles.engine.PlayerId;
+import com.osrstcgbattles.match.MatchView;
 import com.osrstcgbattles.ui.board.BattleBoardView;
 import com.osrstcgbattles.ui.board.BattlePlayerIdentity;
 import java.awt.CardLayout;
@@ -134,9 +135,9 @@ public final class LocalBattleWindow
 
 	private void render()
 	{
-		for (BattleBoardView view : views.values())
+		for (Map.Entry<PlayerId, BattleBoardView> entry : views.entrySet())
 		{
-			view.setState(state);
+			entry.getValue().setState(MatchView.forPlayer(state, entry.getKey()));
 		}
 
 		// render() runs last on every path that can end a match (execute(), showWindow(), the

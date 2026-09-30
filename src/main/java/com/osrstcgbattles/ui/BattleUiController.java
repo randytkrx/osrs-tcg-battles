@@ -59,4 +59,25 @@ public interface BattleUiController
 	void declinePartyDuel();
 
 	void abortPartyDuel();
+
+	default boolean isOnlinePlayEnabled() { return false; }
+
+	default String getOnlineStatus() { return "Online play is disabled"; }
+	default boolean canConnectOnline() { return false; }
+	default boolean canStartOnlineWaiting() { return false; }
+	default boolean canCancelOnlineWaiting() { return false; }
+
+	default void connectOnline() { }
+
+	default void createOnlineLobby() { }
+
+	default void joinOnlineLobby(String code) { }
+
+	default void joinCasualQueue() { }
+
+	default void leaveCasualQueue() { }
+
+	default void joinRankedQueue() { }
+
+	default void leaveRankedQueue() { }
 }

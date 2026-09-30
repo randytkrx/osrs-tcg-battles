@@ -28,6 +28,17 @@ public final class BoardState
 		return new BoardState(empty);
 	}
 
+	public static BoardState visible(Map<PlayerId, List<BoardUnit>> units)
+	{
+		if (units == null) throw new IllegalArgumentException("units are required");
+		for (PlayerId player : PlayerId.values())
+		{
+			if (units.get(player) == null || units.get(player).contains(null))
+				throw new IllegalArgumentException("both player boards are required");
+		}
+		return new BoardState(units);
+	}
+
 	public List<BoardUnit> getUnits(PlayerId player)
 	{
 		return units.get(player);
