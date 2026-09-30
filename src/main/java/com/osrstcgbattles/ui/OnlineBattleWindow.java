@@ -169,7 +169,6 @@ public final class OnlineBattleWindow
 		try { SwingUtilities.invokeAndWait(action); }
 		catch (InterruptedException exception)
 		{
-			Thread.currentThread().interrupt();
 			throw new IllegalStateException("Interrupted while creating online battle", exception);
 		}
 		catch (InvocationTargetException exception)

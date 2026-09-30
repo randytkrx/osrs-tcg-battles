@@ -210,7 +210,7 @@ public class RankedRepositoryTest
 		}
 		finally
 		{
-			executor.shutdownNow();
+			executor.shutdown();
 		}
 	}
 

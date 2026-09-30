@@ -139,7 +139,7 @@ public final class DuelscapeBackend implements AutoCloseable
 	{
 		if (server == null) return;
 		server.stop();
-		maintenance.shutdownNow();
+		maintenance.shutdown();
 		games.close();
 		server = null;
 		address = null;
